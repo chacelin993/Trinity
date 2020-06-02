@@ -7,9 +7,7 @@
 #include <TStyle.h>
 #include <TMath.h>
 #include <TH1D.h>
-#include <iostream>
-#include <fstream>
-#include <string>
+
 #include <TROOT.h>
 #include <TApplication.h>
 
@@ -195,80 +193,6 @@ return fabs(i2-i1);
 //follows description in Dutta 2005 in particular equation 28 with
 //parameterization of beta in equation 13 case II
 //energies in GeV distances in km at inptut
-double enerNu[30],enerTau[101],angle[30],prob[3000],err[3000];
-string star;
-
-void readFromTable(){
-	ifstream data("table_with_TauRunner.txt");
-	//(data.is_open())? cout<<"it's open":cout<<"it's not";
-	int k = 0 ;
-	//string temp[3000];
-//	for(int i=0;i<100;i++){
-//		data>>temp[i];
-//	}
-	for(int j=0;j<30;j++){
-	   data>>star;
-	   data>>enerNu[j];
-	   //cout<<enerNu[j]<<" ";
-	   data>>angle[j];
-	   for(int i=0;i<100;i++){
-		  data>>enerTau[i];
-		  data>>prob[k];
-		  //data>>err[k] ;
-		  k++ ;
-	   }
-	   data>>enerTau[100];
-	}
-	//for(int i=0;i<3000;i++){cout<<prob[i]<<" ";}
-	//cout<<enerTau[100]<<" ";
-}
-Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
-{
-
-		int indexEnu=0;
-		int indexAngle=0;
-		int indexEtau=0;
-		Enu = log10(Enu) + 9.0;
-		Etau = log10(Etau) + 9.0 ;
-		//if(Etau>=18.9) {cout<<Etau<<" ";}
-		//cout<<Etau<<" " ;
-	//importing all the data from table.txt into an array
-		double zenithAngle = 180 - acos(D/2/REarth)/M_PI*180 ;
-		//cout<<zenithAngle<<" ";
-		//find which probability the input of this funciton correstponding to
-		for(int i=0;i<29;i++){
-			if(Enu>=enerNu[i]-0.2 && Enu<=enerNu[i]+0.2){
-				indexEnu = i ;
-				break;
-			}else{
-				continue;
-			}
-		}
-		for(int i=0;i<3;i++){
-			if(zenithAngle>=angle[i]-0.2 && zenithAngle<=angle[i]+0.2){
-				indexAngle=i;
-				break;
-			}else{
-				continue;
-			}
-		}
-		for(int i=0;i<100;i++){
-			if(Etau>=enerTau[i]-0.02 && Etau<=enerTau[i]+0.05){
-				indexEtau=i;
-				break;
-			}else{
-				continue;
-			}
-		}
-	int indexProb = indexEnu*100+indexAngle*100+indexEtau;
-	double Prob = prob[indexProb];
-	//cout<<"indexEnu: "<<enerNu[indexEnu]<<endl<<"indexAngle: "<<angle[indexAngle]<<endl<<"indexEtau: "<<enerTau[indexEtau]<<endl;
-	//cout<<"indexEtau: "<<indexEtau<<" ";
-	//if(Prob>=0.8){cout<<Prob<<" ";}
-	//cout<<" "<<enerTau[100];
-return Prob ;
-
-}
 Double_t PEtau(Double_t D,Double_t Etau, Double_t Enu) 
 {
 
@@ -752,9 +676,8 @@ return ProbTauDecay;
 
 void PlotEmergenceProbability()
 {
-//	ofsteam test;
-//	test.open("prob.txt");
-  TH1D *hTau = new TH1D("hTauS","",100,5,10);
+
+  TH1D *hTau = new TH1D("hTauS","",50,7,12);
   //hTau->SetMaximum(1);
   hTau->GetXaxis()->SetTitle("energy [GeV]");
   hTau->GetYaxis()->SetTitle("F_tau/F_nu");
@@ -772,15 +695,13 @@ void PlotEmergenceProbability()
   TLegend *leg = new TLegend(0.7,0.4,0.89,0.88,"neutrino energy");
 
 
-  double Enulog = 10;
-  double Enuminlog = 6.9;
-  double Enusteplog = 0.333333;
+  double Enulog = 11;
+  double Enuminlog = 7;
+  double Enusteplog = 0.5;
   int s=0;
   while(Enulog>Enuminlog)
     {
       double Enu = pow(10,Enulog);
-      //cout<<"logEnu :"<<log10(Enu)<<" " ;
-      //cout<<" "<<Enulog;
       Enulog-=Enusteplog;
       TGraph *grProb = new TGraph(); 
       grProb->SetMarkerStyle(20+s);
@@ -795,54 +716,33 @@ void PlotEmergenceProbability()
       double dmax = 4;
       double dstep = 0.2;
       int p=0;
-//      double angle = 89.0;
-//      double angleStep=0.333333 ;
-//      double angleMax = 89.8 ;
-      double angle = 90.3333333;
-      double angleStep= 0.3333333 ;
-      double angleMax = 91.0 ;
-      //while(d<dmax)
-      //while(angle>angleMin)
-      while(angle<=angleMax)
-       {
-        //double targetthickness = pow(10,d);
-    	//cout<<" "<<angle;
-    	double targetthickness = cos((180-angle)/180*M_PI)*REarth*2 ;
-    	//cout<<angle<<" ";
-    	//cout<<targetthickness<<" " ;
+      while(d<dmax)
+       {          
+        double targetthickness = pow(10,d); 
         double dSumProb = 0;
         hTau->Reset();
         for(int i=1;i<hTau->GetNbinsX();i++)
            {
 
-               //Double_t Etau = hTau->GetBinCenter(i+1);
-        		Double_t Etau = hTau->GetBinLowEdge(i);
-        		//cout<<hTau->GetBinLowEdge(i) ;
+               Double_t Etau = hTau->GetBinCenter(i+1); 
                if(Etau<=0.8*Enu)
                  {
-                    Double_t P = PEtau0(targetthickness,Etau,Enu);
-                    //cout<<"prob: "<<P<<" ";
+                    Double_t P = PEtau(targetthickness,Etau,Enu);
                     //cout<<targetthickness<<" . "<<Etau<<"  "<<Enu<<" P "<<P<<endl;
-                    //P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
-                    //cout<<hTau->GetBinLowEdge(i)<<" ";
+                    P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
+
                     hTau->Fill(Etau,P); 
                     hTau->SetBinError(i,0);
                     dSumProb+=P;
-
                  }
 
             }//got the energy spectrum of the taus for this azimuth and elevation
-         //test<<dSumProb<<" ";
-        //cout<<dSumProb<<" ";
+
          grProb->SetPoint(p,targetthickness,dSumProb);
          p++;
-         angle+=angleStep ;
-         d+=dstep;
-
-        }
-
+         d+=dstep;            
+        }    
      }
-//  test.close();
   TCanvas *cProbOfEmergence = new TCanvas("cProbOfEmergence","Probability of emergence",750,500);
   cProbOfEmergence->Draw();
   cProbOfEmergence->SetLogx();
@@ -856,13 +756,12 @@ void PlotEmergenceProbability()
   mg->GetYaxis()->SetTitleOffset(1.0);
   mg->GetYaxis()->SetTitleSize(0.045);
   mg->GetYaxis()->SetLabelSize(0.045);
-  //mg->GetYaxis()->SetRangeUser(1e-4,1);
-  mg->GetYaxis()->SetRangeUser(1e-5,1);
-  //mg->GetXaxis()->SetRangeUser(1,1e4);
+  mg->GetYaxis()->SetRangeUser(1e-4,1);
+ // mg->GetXaxis()->SetRangeUser(1,5e3);
   leg->Draw();
   //TF1 *fdeg=new TF1("fdeg","90-180/3.1415*TMath::ASin(0.5*x/6371)",0,1e4);
-  //cout<<mg->GetXaxis()->GetXmin()<<endl;
-  //cout<<180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmin()/6371)<<"  "<<180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmax()/6371)<<endl;
+  cout<<mg->GetXaxis()->GetXmin()<<endl;
+  cout<<180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmin()/6371)<<"  "<<180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmax()/6371)<<endl;
   TF1 *fdeg=new TF1("fdeg","x",180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmin()/6371),180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmax()/6371));
   TGaxis *degaxis = new TGaxis(mg->GetXaxis()->GetXmin(),1,mg->GetXaxis()->GetXmax(),1,"fdeg",510,"-G");
   degaxis->SetTitle("elevation angle [degrees]");
@@ -1888,7 +1787,7 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
 //
 //////////////////////////////////////////////////////////////////
 int main (int argc, char **argv) {
-	readFromTable() ;
+
 
   //initiate root
   TROOT root("DisplayEvts","Display Results");
@@ -1918,8 +1817,7 @@ PlotEmergenceProbability();
 
 gStyle->SetOptStat(0);
 
-//TH1D *hTau = new TH1D("hTau","",70,5,12); //original
-TH1D *hTau = new TH1D("hTau","",100,5,10);
+TH1D *hTau = new TH1D("hTau","",70,5,12);
 hTau->GetXaxis()->SetTitle("energy [GeV]");
 hTau->GetYaxis()->SetTitle("F_tau/F_nu");
 hTau->SetLineWidth(3);
@@ -1946,31 +1844,26 @@ for(int i=0;i<hTau->GetNbinsX();i++)
 {
   Double_t El = hTau->GetBinLowEdge(i+1);
   Double_t Eh = hTau->GetBinLowEdge(i+2);
-  //Double_t Enu=hTau->GetBinCenter(i+1);//original
-  Double_t Enu=hTau->GetBinLowEdge(i+2);
+  Double_t Enu=hTau->GetBinCenter(i+1);
 
   Double_t weight = log(Eh)-log(El) ;
 
-  Double_t Etau = hTau->GetBinLowEdge(1);
+  Double_t Etau = hTau->GetBinCenter(1); 
   int n = 0;
   while(Etau<=Eh)
   {
    //  cout<<"Energy "<<E<<endl;
-   Double_t P = PEtau(100,Etau,Enu) ;//original
-	cout<<"Etau: "<<log10(Etau)<<" ";
-	//Double_t P = PEtau0(74.12953218,Etau,Enu) ;
-   //cout<<"weight: "<<weight<<" ";
-   //hTau->Fill(Etau,weight*P); //original
-   hTau->Fill(Etau,P);
+   Double_t P = PEtau(100,Etau,Enu) ;
+   hTau->Fill(Etau,weight*P);
    n++;
-   Etau= hTau->GetBinLowEdge(n+1);
+   Etau=  hTau->GetBinCenter(n+1);
   }
 }
 
 //convert to different units
 for(int i=0;i<hTau->GetNbinsX();i++)
 {
-   //Double_t Enu = hTau->GetBinCenter(i+1);//original
+   //Double_t Enu = hTau->GetBinCenter(i+1);
    Double_t El = hTau->GetBinLowEdge(i+1);
    Double_t Eh = hTau->GetBinLowEdge(i+2);
    hTau->SetBinContent(i+1,hTau->GetBinContent(i+1)/(log(Eh)-log(El)));
@@ -2021,7 +1914,7 @@ bFluorescence = kFALSE;
 //CalculateAcceptanceVsEnergy(hTau);
 //
 //CalculateIntegralSensitivity(hTau);
-//CalculateDifferentialSensitivity(hTau);
+CalculateDifferentialSensitivity(hTau);
 //
 
 /*

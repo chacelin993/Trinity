@@ -199,7 +199,7 @@ double enerNu[30],enerTau[101],angle[30],prob[3000],err[3000];
 string star;
 
 void readFromTable(){
-	ifstream data("table_with_TauRunner.txt");
+	ifstream data("table_normed_by_#nu.txt");
 	//(data.is_open())? cout<<"it's open":cout<<"it's not";
 	int k = 0 ;
 	//string temp[3000];
@@ -219,25 +219,24 @@ void readFromTable(){
 	   }
 	   data>>enerTau[100];
 	}
-	//for(int i=0;i<3000;i++){cout<<prob[i]<<" ";}
-	//cout<<enerTau[100]<<" ";
+	//for(int i=0;i<101;i++){cout<<prob[i]<<" ";}
 }
 Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 {
 
-		int indexEnu=0;
-		int indexAngle=0;
-		int indexEtau=0;
+		int indexEnu;
+		int indexAngle;
+		int indexEtau;
 		Enu = log10(Enu) + 9.0;
 		Etau = log10(Etau) + 9.0 ;
 		//if(Etau>=18.9) {cout<<Etau<<" ";}
-		//cout<<Etau<<" " ;
+		cout<<Enu<<" " ;
 	//importing all the data from table.txt into an array
 		double zenithAngle = 180 - acos(D/2/REarth)/M_PI*180 ;
 		//cout<<zenithAngle<<" ";
 		//find which probability the input of this funciton correstponding to
 		for(int i=0;i<29;i++){
-			if(Enu>=enerNu[i]-0.2 && Enu<=enerNu[i]+0.2){
+			if(Enu>=enerNu[i]-0.01 && Enu<=enerNu[i]+0.01){
 				indexEnu = i ;
 				break;
 			}else{
@@ -253,20 +252,21 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 			}
 		}
 		for(int i=0;i<100;i++){
-			if(Etau>=enerTau[i]-0.02 && Etau<=enerTau[i]+0.05){
+			if(Etau>=enerTau[i]-0.02 && Etau<=enerTau[i]+0.02){
 				indexEtau=i;
 				break;
 			}else{
 				continue;
 			}
 		}
-	int indexProb = indexEnu*100+indexAngle*100+indexEtau;
-	double Prob = prob[indexProb];
-	//cout<<"indexEnu: "<<enerNu[indexEnu]<<endl<<"indexAngle: "<<angle[indexAngle]<<endl<<"indexEtau: "<<enerTau[indexEtau]<<endl;
-	//cout<<"indexEtau: "<<indexEtau<<" ";
-	//if(Prob>=0.8){cout<<Prob<<" ";}
+		int indexProb = indexEnu*100+indexAngle*100+indexEtau;
+		double Prob = prob[indexProb];
+		//cout<<"indexEnu: "<<enerNu[indexEnu]<<endl<<"indexAngle: "<<angle[indexAngle]<<endl<<"indexEtau: "<<enerTau[indexEtau]<<endl;
+	//cout<<"prob: "<<Prob<<" ";
+	if(Prob>=0.8){cout<<Prob<<" ";}
 	//cout<<" "<<enerTau[100];
-return Prob ;
+
+	return Prob ;
 
 }
 Double_t PEtau(Double_t D,Double_t Etau, Double_t Enu) 
@@ -820,20 +820,19 @@ void PlotEmergenceProbability()
         		//cout<<hTau->GetBinLowEdge(i) ;
                if(Etau<=0.8*Enu)
                  {
-                    Double_t P = PEtau0(targetthickness,Etau,Enu);
-                    //cout<<"prob: "<<P<<" ";
+                    Double_t P = PEtau(targetthickness,Etau,Enu);
+                    //cout<<P<<" ";
+//            	    Double_t P = PEtau0(ang,Etau,Enu);
                     //cout<<targetthickness<<" . "<<Etau<<"  "<<Enu<<" P "<<P<<endl;
-                    //P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
-                    //cout<<hTau->GetBinLowEdge(i)<<" ";
+                    P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
+
                     hTau->Fill(Etau,P); 
                     hTau->SetBinError(i,0);
                     dSumProb+=P;
-
                  }
 
             }//got the energy spectrum of the taus for this azimuth and elevation
          //test<<dSumProb<<" ";
-        //cout<<dSumProb<<" ";
          grProb->SetPoint(p,targetthickness,dSumProb);
          p++;
          angle+=angleStep ;
@@ -1918,8 +1917,7 @@ PlotEmergenceProbability();
 
 gStyle->SetOptStat(0);
 
-//TH1D *hTau = new TH1D("hTau","",70,5,12); //original
-TH1D *hTau = new TH1D("hTau","",100,5,10);
+TH1D *hTau = new TH1D("hTau","",70,5,12);
 hTau->GetXaxis()->SetTitle("energy [GeV]");
 hTau->GetYaxis()->SetTitle("F_tau/F_nu");
 hTau->SetLineWidth(3);
@@ -1946,31 +1944,26 @@ for(int i=0;i<hTau->GetNbinsX();i++)
 {
   Double_t El = hTau->GetBinLowEdge(i+1);
   Double_t Eh = hTau->GetBinLowEdge(i+2);
-  //Double_t Enu=hTau->GetBinCenter(i+1);//original
-  Double_t Enu=hTau->GetBinLowEdge(i+2);
+  Double_t Enu=hTau->GetBinCenter(i+1);
 
   Double_t weight = log(Eh)-log(El) ;
 
-  Double_t Etau = hTau->GetBinLowEdge(1);
+  Double_t Etau = hTau->GetBinCenter(1); 
   int n = 0;
   while(Etau<=Eh)
   {
    //  cout<<"Energy "<<E<<endl;
-   Double_t P = PEtau(100,Etau,Enu) ;//original
-	cout<<"Etau: "<<log10(Etau)<<" ";
-	//Double_t P = PEtau0(74.12953218,Etau,Enu) ;
-   //cout<<"weight: "<<weight<<" ";
-   //hTau->Fill(Etau,weight*P); //original
-   hTau->Fill(Etau,P);
+   Double_t P = PEtau(100,Etau,Enu) ;
+   hTau->Fill(Etau,weight*P);
    n++;
-   Etau= hTau->GetBinLowEdge(n+1);
+   Etau=  hTau->GetBinCenter(n+1);
   }
 }
 
 //convert to different units
 for(int i=0;i<hTau->GetNbinsX();i++)
 {
-   //Double_t Enu = hTau->GetBinCenter(i+1);//original
+   //Double_t Enu = hTau->GetBinCenter(i+1);
    Double_t El = hTau->GetBinLowEdge(i+1);
    Double_t Eh = hTau->GetBinLowEdge(i+2);
    hTau->SetBinContent(i+1,hTau->GetBinContent(i+1)/(log(Eh)-log(El)));
