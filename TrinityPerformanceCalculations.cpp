@@ -231,7 +231,7 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 		Enu = log10(Enu) + 9.0;
 		Etau = log10(Etau) + 9.0 ;
 		//if(Etau>=18.9) {cout<<Etau<<" ";}
-		//cout<<Etau<<" " ;
+		//cout<<"Enu: "<<Enu<<" ";
 	//importing all the data from table.txt into an array
 		double zenithAngle = 180 - acos(D/2/REarth)/M_PI*180 ;
 		//cout<<zenithAngle<<" ";
@@ -824,7 +824,7 @@ void PlotEmergenceProbability()
                     //cout<<"prob: "<<P<<" ";
                     //cout<<targetthickness<<" . "<<Etau<<"  "<<Enu<<" P "<<P<<endl;
                     //P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
-                    //cout<<hTau->GetBinLowEdge(i)<<" ";
+                    //cout<<hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i)<<" ";
                     hTau->Fill(Etau,P); 
                     hTau->SetBinError(i,0);
                     dSumProb+=P;
@@ -1949,16 +1949,16 @@ for(int i=0;i<hTau->GetNbinsX();i++)
   //Double_t Enu=hTau->GetBinCenter(i+1);//original
   Double_t Enu=hTau->GetBinLowEdge(i+2);
 
-  Double_t weight = log(Eh)-log(El) ;
-
+  //Double_t weight = log(Eh)-log(El) ; //original
+  Double_t weight = log10(Eh)-log10(El) ;
   Double_t Etau = hTau->GetBinLowEdge(1);
   int n = 0;
   while(Etau<=Eh)
   {
    //  cout<<"Energy "<<E<<endl;
-   Double_t P = PEtau(100,Etau,Enu) ;//original
-	cout<<"Etau: "<<log10(Etau)<<" ";
-	//Double_t P = PEtau0(74.12953218,Etau,Enu) ;
+   //Double_t P = PEtau(100,Etau,Enu) ;//original
+	//cout<<"Enu: "<<log10(Enu)+9<<" ";
+	Double_t P = PEtau0(74.12953218,Etau,Enu) ;
    //cout<<"weight: "<<weight<<" ";
    //hTau->Fill(Etau,weight*P); //original
    hTau->Fill(Etau,P);
@@ -1973,7 +1973,7 @@ for(int i=0;i<hTau->GetNbinsX();i++)
    //Double_t Enu = hTau->GetBinCenter(i+1);//original
    Double_t El = hTau->GetBinLowEdge(i+1);
    Double_t Eh = hTau->GetBinLowEdge(i+2);
-   hTau->SetBinContent(i+1,hTau->GetBinContent(i+1)/(log(Eh)-log(El)));
+   hTau->SetBinContent(i+1,hTau->GetBinContent(i+1)/(log10(Eh)-log10(El)));
    hTau->SetBinError(i+1,0);
 }
 
