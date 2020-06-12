@@ -259,9 +259,11 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 			}else{
 				continue;
 			}
+
 		}
 	int indexProb = indexEnu*100+indexAngle*100+indexEtau;
-	double Prob = prob[indexProb];
+
+	double Prob = prob[indexProb]/(pow(10,5+(indexEtau+1)*0.05)-pow(10,5+indexEtau*0.05));
 	//cout<<"indexEnu: "<<enerNu[indexEnu]<<endl<<"indexAngle: "<<angle[indexAngle]<<endl<<"indexEtau: "<<enerTau[indexEtau]<<endl;
 	//cout<<"indexEtau: "<<indexEtau<<" ";
 	//if(Prob>=0.8){cout<<Prob<<" ";}
@@ -823,7 +825,7 @@ void PlotEmergenceProbability()
                     Double_t P = PEtau0(targetthickness,Etau,Enu);
                     //cout<<"prob: "<<P<<" ";
                     //cout<<targetthickness<<" . "<<Etau<<"  "<<Enu<<" P "<<P<<endl;
-                    //P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
+                    P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
                     //cout<<hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i)<<" ";
                     hTau->Fill(Etau,P); 
                     hTau->SetBinError(i,0);
@@ -890,7 +892,7 @@ void GetTauDistribution(TH1D *hTauSpec, Double_t d, Double_t expMin = 9.0, Doubl
                if(Etau<=0.8*Enu) //0.8 because I need to account for part of the energy being transferred to the also produced neutrinos
                  {
                     Enu = pow(10,(expMin+expMax)*0.5);
-                    Double_t P = PEtau(d,Etau,Enu);
+                    Double_t P = PEtau0(d,Etau,Enu);
                     hTauSpec->Fill(Etau,P);
                  } 
             }
@@ -902,7 +904,7 @@ void GetTauDistribution(TH1D *hTauSpec, Double_t d, Double_t expMin = 9.0, Doubl
                     {
                       Double_t P = 0;
                       //if(Enu==Enumin)  //mod
-                      P = PEtau(d,Etau,Enu+0.5*DeltaEnu);
+                      P = PEtau0(d,Etau,Enu+0.5*DeltaEnu);
                       //if(Enu==Enumin) //mod
                       //cout<<P<<"  "<<d<<"  "<<Etau<<" "<<Enu+0.5*DeltaEnu<<endl<<endl<<endl; //mod
                       //P *= DeltaEnu/(Enumax-Enumin); 
@@ -1949,8 +1951,8 @@ for(int i=0;i<hTau->GetNbinsX();i++)
   //Double_t Enu=hTau->GetBinCenter(i+1);//original
   Double_t Enu=hTau->GetBinLowEdge(i+2);
 
-  //Double_t weight = log(Eh)-log(El) ; //original
-  Double_t weight = log10(Eh)-log10(El) ;
+  Double_t weight = log(Eh)-log(El) ; //original
+//  Double_t weight = log10(Eh)-log10(El) ;
   Double_t Etau = hTau->GetBinLowEdge(1);
   int n = 0;
   while(Etau<=Eh)
@@ -1973,7 +1975,7 @@ for(int i=0;i<hTau->GetNbinsX();i++)
    //Double_t Enu = hTau->GetBinCenter(i+1);//original
    Double_t El = hTau->GetBinLowEdge(i+1);
    Double_t Eh = hTau->GetBinLowEdge(i+2);
-   hTau->SetBinContent(i+1,hTau->GetBinContent(i+1)/(log10(Eh)-log10(El)));
+   hTau->SetBinContent(i+1,hTau->GetBinContent(i+1)/(log(Eh)-log(El)));
    hTau->SetBinError(i+1,0);
 }
 
@@ -2021,7 +2023,7 @@ bFluorescence = kFALSE;
 //CalculateAcceptanceVsEnergy(hTau);
 //
 //CalculateIntegralSensitivity(hTau);
-//CalculateDifferentialSensitivity(hTau);
+CalculateDifferentialSensitivity(hTau);
 //
 
 /*
