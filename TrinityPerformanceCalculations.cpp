@@ -195,18 +195,23 @@ return fabs(i2-i1);
 //follows description in Dutta 2005 in particular equation 28 with
 //parameterization of beta in equation 13 case II
 //energies in GeV distances in km at inptut
-double enerNu[30],enerTau[101],angle[30],prob[3000],err[3000];
-string star;
+const int tableNumber=420 ;
+const int angleNumber = 20 ;
+const int energyNumber = 21;
+const int binNumber = 100 ;
+string star ;
+
+double enerNu[tableNumber],enerTau[binNumber+1],angle[tableNumber],prob[tableNumber*100],err[tableNumber*100],sum[tableNumber];
 
 void readFromTable(){
-	ifstream data("table_with_TauRunner.txt");
+	ifstream data("table_zenith_90_100_e_16_20.txt");
 	//(data.is_open())? cout<<"it's open":cout<<"it's not";
 	int k = 0 ;
 	//string temp[3000];
 //	for(int i=0;i<100;i++){
 //		data>>temp[i];
 //	}
-	for(int j=0;j<30;j++){
+	for(int j=0;j<tableNumber;j++){
 	   data>>star;
 	   data>>enerNu[j];
 	   //cout<<enerNu[j]<<" ";
@@ -219,8 +224,8 @@ void readFromTable(){
 	   }
 	   data>>enerTau[100];
 	}
-	//for(int i=0;i<3000;i++){cout<<prob[i]<<" ";}
-	//cout<<enerTau[100]<<" ";
+	//for(int i=41000;i<42000;i++){cout<<prob[i]<<endl;}
+	//cout<<k<<" ";
 }
 Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 {
@@ -236,16 +241,16 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 		double zenithAngle = 180 - acos(D/2/REarth)/M_PI*180 ;
 		//cout<<zenithAngle<<" ";
 		//find which probability the input of this funciton correstponding to
-		for(int i=0;i<29;i++){
-			if(Enu>=enerNu[i]-0.2 && Enu<=enerNu[i]+0.2){
+		for(int i=0;i<tableNumber;i++){
+			if(Enu>=enerNu[i]-0.1 && Enu<=enerNu[i]+0.1){
 				indexEnu = i ;
 				break;
 			}else{
 				continue;
 			}
 		}
-		for(int i=0;i<3;i++){
-			if(zenithAngle>=angle[i]-0.2 && zenithAngle<=angle[i]+0.2){
+		for(int i=0;i<angleNumber;i++){
+			if(zenithAngle>=angle[i]-0.25 && zenithAngle<=angle[i]+0.25){
 				indexAngle=i;
 				break;
 			}else{
@@ -253,7 +258,7 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 			}
 		}
 		for(int i=0;i<100;i++){
-			if(Etau>=enerTau[i]-0.02 && Etau<=enerTau[i]+0.05){
+			if(Etau>=enerTau[i]-0.03 && Etau<=enerTau[i]+0.03){
 				indexEtau=i;
 				break;
 			}else{
@@ -262,8 +267,8 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 
 		}
 	int indexProb = indexEnu*100+indexAngle*100+indexEtau;
-
-	double Prob = prob[indexProb]/(pow(10,5+(indexEtau+1)*0.05)-pow(10,5+indexEtau*0.05));
+	double Prob = prob[indexProb]/(pow(10,5+(indexEtau+1)*0.06)-pow(10,5+indexEtau*0.06));
+	//double Prob = prob[indexProb] ;
 	//cout<<"indexEnu: "<<enerNu[indexEnu]<<endl<<"indexAngle: "<<angle[indexAngle]<<endl<<"indexEtau: "<<enerTau[indexEtau]<<endl;
 	//cout<<"indexEtau: "<<indexEtau<<" ";
 	//if(Prob>=0.8){cout<<Prob<<" ";}
@@ -756,7 +761,7 @@ void PlotEmergenceProbability()
 {
 //	ofsteam test;
 //	test.open("prob.txt");
-  TH1D *hTau = new TH1D("hTauS","",100,5,10);
+  TH1D *hTau = new TH1D("hTauS","",100,5,11);
   //hTau->SetMaximum(1);
   hTau->GetXaxis()->SetTitle("energy [GeV]");
   hTau->GetYaxis()->SetTitle("F_tau/F_nu");
@@ -774,9 +779,9 @@ void PlotEmergenceProbability()
   TLegend *leg = new TLegend(0.7,0.4,0.89,0.88,"neutrino energy");
 
 
-  double Enulog = 10;
-  double Enuminlog = 6.9;
-  double Enusteplog = 0.333333;
+  double Enulog = 11;
+  double Enuminlog = 7;
+  double Enusteplog = 0.5;
   int s=0;
   while(Enulog>Enuminlog)
     {
@@ -800,9 +805,9 @@ void PlotEmergenceProbability()
 //      double angle = 89.0;
 //      double angleStep=0.333333 ;
 //      double angleMax = 89.8 ;
-      double angle = 90.3333333;
-      double angleStep= 0.3333333 ;
-      double angleMax = 91.0 ;
+      double angle = 90.5;
+      double angleStep= 0.5 ;
+      double angleMax = 100 ;
       //while(d<dmax)
       //while(angle>angleMin)
       while(angle<=angleMax)
