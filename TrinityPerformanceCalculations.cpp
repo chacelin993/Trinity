@@ -267,7 +267,7 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 
 		}
 	int indexProb = indexEnu*100+indexAngle*100+indexEtau;
-	double Prob = prob[indexProb]/(pow(10,5+(indexEtau+1)*0.06)-pow(10,5+indexEtau*0.06));
+	double Prob = prob[indexProb]/(pow(10,5+(indexEtau+1)*0.07)-pow(10,5+indexEtau*0.07));
 	//double Prob = prob[indexProb] ;
 	//cout<<"indexEnu: "<<enerNu[indexEnu]<<endl<<"indexAngle: "<<angle[indexAngle]<<endl<<"indexEtau: "<<enerTau[indexEtau]<<endl;
 	//cout<<"indexEtau: "<<indexEtau<<" ";
