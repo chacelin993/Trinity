@@ -195,16 +195,16 @@ return fabs(i2-i1);
 //follows description in Dutta 2005 in particular equation 28 with
 //parameterization of beta in equation 13 case II
 //energies in GeV distances in km at inptut
-const int tableNumber=420 ;
+const int tableNumber=520 ;
 const int angleNumber = 20 ;
-const int energyNumber = 21;
+const int energyNumber = 26;
 const int binNumber = 100 ;
 string star ;
 
 double enerNu[tableNumber],enerTau[binNumber+1],angle[tableNumber],prob[tableNumber*100],err[tableNumber*100],sum[tableNumber];
 
 void readFromTable(){
-	ifstream data("table_zenith_90_100_e_16_20.txt");
+	ifstream data("table_zenith_90_100_e_15_20.txt");
 	//(data.is_open())? cout<<"it's open":cout<<"it's not";
 	int k = 0 ;
 	//string temp[3000];
@@ -258,7 +258,7 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 			}
 		}
 		for(int i=0;i<100;i++){
-			if(Etau>=enerTau[i]-0.03 && Etau<=enerTau[i]+0.03){
+			if(Etau>=enerTau[i]-0.035 && Etau<=enerTau[i]+0.035){
 				indexEtau=i;
 				break;
 			}else{
@@ -780,7 +780,7 @@ void PlotEmergenceProbability()
 
 
   double Enulog = 11;
-  double Enuminlog = 7;
+  double Enuminlog = 6;
   double Enusteplog = 0.5;
   int s=0;
   while(Enulog>Enuminlog)
