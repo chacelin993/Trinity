@@ -1774,7 +1774,7 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
 
     Double_t dLogEnergyStep = 0.2; //0.2
     Double_t dHalfEnergyBinWidth =1/2.; //in log was 1/2
-    Double_t logEmin = 7; //7
+    Double_t logEmin = 6; //7
     Double_t logEmax = 11; //11
 
     bCombined = kTRUE;
