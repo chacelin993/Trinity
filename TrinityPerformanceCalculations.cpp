@@ -195,41 +195,46 @@ return fabs(i2-i1);
 //follows description in Dutta 2005 in particular equation 28 with
 //parameterization of beta in equation 13 case II
 //energies in GeV distances in km at inptut
-const int tableNumber=520 ;
-const int angleNumber = 20 ;
-const int energyNumber = 26;
-const int binNumber = 100 ;
-string star ;
 
-double enerNu[tableNumber],enerTau[binNumber+1],angle[tableNumber],prob[tableNumber*100],err[tableNumber*100],sum[tableNumber];
+string star ;
+double number;
+int angleNumber;
+vector<double> enerNu,enerTau,prob,angle;
+
+void findAngleNumber(){
+	for(int i=1;i<enerNu.size();i++){
+		if(angle[0]==angle[i]){
+			angleNumber = i;
+			break;
+		}else{
+			continue ;
+		}
+	}
+}
 
 void readFromTable(){
-	ifstream data("table_zenith_90_100_e_15_20.txt");
-	//(data.is_open())? cout<<"it's open":cout<<"it's not";
-	int k = 0 ;
-	//string temp[3000];
-//	for(int i=0;i<100;i++){
-//		data>>temp[i];
-//	}
-	for(int j=0;j<tableNumber;j++){
-	   data>>star;
-	   data>>enerNu[j];
-	   //cout<<enerNu[j]<<" ";
-	   data>>angle[j];
-	   for(int i=0;i<100;i++){
-		  data>>enerTau[i];
-		  data>>prob[k];
-		  //data>>err[k] ;
-		  k++ ;
-	   }
-	   data>>enerTau[100];
+	ifstream ifs("table_zenith_90_100_e_15_20.txt") ;
+	if(ifs.is_open()){
+	ifs>>star;
+		while(ifs.good()){
+			ifs>>number;
+			enerNu.push_back(number);
+			ifs>>number;
+			angle.push_back(number);
+			for(int i=0;i<100;i++){
+				ifs>>number;
+				enerTau.push_back(number);
+				ifs>>number;
+				prob.push_back(number);
+			}
+			ifs>>number;
+			ifs>>star;
+		}
 	}
-	//for(int i=41000;i<42000;i++){cout<<prob[i]<<endl;}
-	//cout<<k<<" ";
 }
 Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 {
-
+		findAngleNumber() ;
 		int indexEnu=0;
 		int indexAngle=0;
 		int indexEtau=0;
@@ -237,11 +242,10 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 		Etau = log10(Etau) + 9.0 ;
 		//if(Etau>=18.9) {cout<<Etau<<" ";}
 		//cout<<"Enu: "<<Enu<<" ";
-	//importing all the data from table.txt into an array
 		double zenithAngle = 180 - acos(D/2/REarth)/M_PI*180 ;
 		//cout<<zenithAngle<<" ";
 		//find which probability the input of this funciton correstponding to
-		for(int i=0;i<tableNumber;i++){
+		for(int i=0;i<enerNu.size();i++){
 			if(Enu>=enerNu[i]-0.1 && Enu<=enerNu[i]+0.1){
 				indexEnu = i ;
 				break;
@@ -759,9 +763,7 @@ return ProbTauDecay;
 
 void PlotEmergenceProbability()
 {
-//	ofsteam test;
-//	test.open("prob.txt");
-  TH1D *hTau = new TH1D("hTauS","",100,5,11);
+  TH1D *hTau = new TH1D("hTauS","",50,7,12);
   //hTau->SetMaximum(1);
   hTau->GetXaxis()->SetTitle("energy [GeV]");
   hTau->GetYaxis()->SetTitle("F_tau/F_nu");
@@ -772,7 +774,7 @@ void PlotEmergenceProbability()
   Axis_t width = (to - from) / bins;
   Axis_t *new_bins = new Axis_t[bins + 1];
   for (int i = 0; i <= bins; i++) {
-     new_bins[i] = TMath::Power(10, from + i * width);
+	 new_bins[i] = TMath::Power(10, from + i * width);
   }
   axis->Set(bins, new_bins);
   TMultiGraph *mg = new TMultiGraph();
@@ -784,72 +786,49 @@ void PlotEmergenceProbability()
   double Enusteplog = 0.5;
   int s=0;
   while(Enulog>Enuminlog)
-    {
-      double Enu = pow(10,Enulog);
-      //cout<<"logEnu :"<<log10(Enu)<<" " ;
-      //cout<<" "<<Enulog;
-      Enulog-=Enusteplog;
-      TGraph *grProb = new TGraph(); 
-      grProb->SetMarkerStyle(20+s);
-      TString title;
-      title.Form("%0.0e GeV",Enu);
-      leg->AddEntry(grProb,title.Data(),"p"); 
-      mg->Add(grProb,"lp");
-      s++;
+	{
+	  double Enu = pow(10,Enulog);
+	  Enulog-=Enusteplog;
+	  TGraph *grProb = new TGraph();
+	  grProb->SetMarkerStyle(20+s);
+	  TString title;
+	  title.Form("%0.0e GeV",Enu);
+	  leg->AddEntry(grProb,title.Data(),"p");
+	  mg->Add(grProb,"lp");
+	  s++;
 
-      // loop over target thickness
-      double d = 0; //in 10^dmin km
-      double dmax = 4;
-      double dstep = 0.2;
-      int p=0;
-//      double angle = 89.0;
-//      double angleStep=0.333333 ;
-//      double angleMax = 89.8 ;
-      double angle = 90.5;
-      double angleStep= 0.5 ;
-      double angleMax = 100 ;
-      //while(d<dmax)
-      //while(angle>angleMin)
-      while(angle<=angleMax)
-       {
-        //double targetthickness = pow(10,d);
-    	//cout<<" "<<angle;
-    	double targetthickness = cos((180-angle)/180*M_PI)*REarth*2 ;
-    	//cout<<angle<<" ";
-    	//cout<<targetthickness<<" " ;
-        double dSumProb = 0;
-        hTau->Reset();
-        for(int i=1;i<hTau->GetNbinsX();i++)
-           {
+	  // loop over target thickness
+	  double d = 0; //in 10^dmin km
+	  double dmax = 4;
+	  double dstep = 0.2;
+	  int p=0;
+	  while(d<dmax)
+	   {
+		double targetthickness = pow(10,d);
+		double dSumProb = 0;
+		hTau->Reset();
+		for(int i=1;i<hTau->GetNbinsX();i++)
+		   {
 
-               //Double_t Etau = hTau->GetBinCenter(i+1);
-        		Double_t Etau = hTau->GetBinLowEdge(i);
-        		//cout<<hTau->GetBinLowEdge(i) ;
-               if(Etau<=0.8*Enu)
-                 {
-                    Double_t P = PEtau0(targetthickness,Etau,Enu);
-                    //cout<<"prob: "<<P<<" ";
-                    //cout<<targetthickness<<" . "<<Etau<<"  "<<Enu<<" P "<<P<<endl;
-                    P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
-                    //cout<<hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i)<<" ";
-                    hTau->Fill(Etau,P); 
-                    hTau->SetBinError(i,0);
-                    dSumProb+=P;
+			   Double_t Etau = hTau->GetBinCenter(i);
+			   if(Etau<=0.8*Enu)
+				 {
+					Double_t P = PEtau0(targetthickness,Etau,Enu);
+					//cout<<targetthickness<<" . "<<Etau<<"  "<<Enu<<" P "<<P<<endl;
+					P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
 
-                 }
+					hTau->Fill(Etau,P);
+					hTau->SetBinError(i,0);
+					dSumProb+=P;
+				 }
 
-            }//got the energy spectrum of the taus for this azimuth and elevation
-         //test<<dSumProb<<" ";
-        //cout<<dSumProb<<" ";
-         grProb->SetPoint(p,targetthickness,dSumProb);
-         p++;
-         angle+=angleStep ;
-         d+=dstep;
+			}//got the energy spectrum of the taus for this azimuth and elevation
 
-        }
-
-     }
-//  test.close();
+		 grProb->SetPoint(p,targetthickness,dSumProb);
+		 p++;
+		 d+=dstep;
+		}
+	 }
   TCanvas *cProbOfEmergence = new TCanvas("cProbOfEmergence","Probability of emergence",750,500);
   cProbOfEmergence->Draw();
   cProbOfEmergence->SetLogx();
@@ -863,13 +842,12 @@ void PlotEmergenceProbability()
   mg->GetYaxis()->SetTitleOffset(1.0);
   mg->GetYaxis()->SetTitleSize(0.045);
   mg->GetYaxis()->SetLabelSize(0.045);
-  //mg->GetYaxis()->SetRangeUser(1e-4,1);
-  mg->GetYaxis()->SetRangeUser(1e-5,1);
-  //mg->GetXaxis()->SetRangeUser(1,1e4);
+  mg->GetYaxis()->SetRangeUser(1e-4,1);
+ // mg->GetXaxis()->SetRangeUser(1,5e3);
   leg->Draw();
   //TF1 *fdeg=new TF1("fdeg","90-180/3.1415*TMath::ASin(0.5*x/6371)",0,1e4);
-  //cout<<mg->GetXaxis()->GetXmin()<<endl;
-  //cout<<180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmin()/6371)<<"  "<<180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmax()/6371)<<endl;
+  cout<<mg->GetXaxis()->GetXmin()<<endl;
+  cout<<180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmin()/6371)<<"  "<<180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmax()/6371)<<endl;
   TF1 *fdeg=new TF1("fdeg","x",180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmin()/6371),180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmax()/6371));
   TGaxis *degaxis = new TGaxis(mg->GetXaxis()->GetXmin(),1,mg->GetXaxis()->GetXmax(),1,"fdeg",510,"-G");
   degaxis->SetTitle("elevation angle [degrees]");
@@ -1925,8 +1903,7 @@ PlotEmergenceProbability();
 
 gStyle->SetOptStat(0);
 
-//TH1D *hTau = new TH1D("hTau","",70,5,12); //original
-TH1D *hTau = new TH1D("hTau","",100,5,10);
+TH1D *hTau = new TH1D("hTau","",70,5,12);
 hTau->GetXaxis()->SetTitle("energy [GeV]");
 hTau->GetYaxis()->SetTitle("F_tau/F_nu");
 hTau->SetLineWidth(3);
@@ -1953,24 +1930,24 @@ for(int i=0;i<hTau->GetNbinsX();i++)
 {
   Double_t El = hTau->GetBinLowEdge(i+1);
   Double_t Eh = hTau->GetBinLowEdge(i+2);
-  //Double_t Enu=hTau->GetBinCenter(i+1);//original
-  Double_t Enu=hTau->GetBinLowEdge(i+2);
+  Double_t Enu=hTau->GetBinCenter(i+1);
+  //Double_t Enu=hTau->GetBinLowEdge(i+2);
 
   Double_t weight = log(Eh)-log(El) ; //original
 //  Double_t weight = log10(Eh)-log10(El) ;
-  Double_t Etau = hTau->GetBinLowEdge(1);
+  Double_t Etau = hTau->GetBinCenter(1);
   int n = 0;
   while(Etau<=Eh)
   {
    //  cout<<"Energy "<<E<<endl;
    //Double_t P = PEtau(100,Etau,Enu) ;//original
 	//cout<<"Enu: "<<log10(Enu)+9<<" ";
-	Double_t P = PEtau0(74.12953218,Etau,Enu) ;
+	Double_t P = PEtau0(100,Etau,Enu) ;
    //cout<<"weight: "<<weight<<" ";
-   //hTau->Fill(Etau,weight*P); //original
+   hTau->Fill(Etau,weight*P); //original
    hTau->Fill(Etau,P);
    n++;
-   Etau= hTau->GetBinLowEdge(n+1);
+   Etau= hTau->GetBinCenter(n+1);
   }
 }
 
