@@ -201,17 +201,6 @@ double number;
 int angleNumber;
 vector<double> enerNu,enerTau,prob,angle;
 
-void findAngleNumber(){
-	for(int i=1;i<enerNu.size();i++){
-		if(angle[0]==angle[i]){
-			angleNumber = i;
-			break;
-		}else{
-			continue ;
-		}
-	}
-}
-
 void readFromTable(){
 	ifstream ifs("table_zenith_90_100_e_15_20.txt") ;
 	if(ifs.is_open()){
@@ -232,9 +221,18 @@ void readFromTable(){
 		}
 	}
 }
+void findAngleNumber(){
+	for(int i=1;i<enerNu.size();i++){
+		if(angle[0]==angle[i]){
+			angleNumber = i;
+			break;
+		}else{
+			continue ;
+		}
+	}
+}
 Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 {
-		findAngleNumber() ;
 		int indexEnu=0;
 		int indexAngle=0;
 		int indexEtau=0;
@@ -243,7 +241,6 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 		//if(Etau>=18.9) {cout<<Etau<<" ";}
 		//cout<<"Enu: "<<Enu<<" ";
 		double zenithAngle = 180 - acos(D/2/REarth)/M_PI*180 ;
-		//cout<<zenithAngle<<" ";
 		//find which probability the input of this funciton correstponding to
 		for(int i=0;i<enerNu.size();i++){
 			if(Enu>=enerNu[i]-0.1 && Enu<=enerNu[i]+0.1){
@@ -274,7 +271,7 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 	double Prob = prob[indexProb]/(pow(10,5+(indexEtau+1)*0.07)-pow(10,5+indexEtau*0.07));
 	//double Prob = prob[indexProb] ;
 	//cout<<"indexEnu: "<<enerNu[indexEnu]<<endl<<"indexAngle: "<<angle[indexAngle]<<endl<<"indexEtau: "<<enerTau[indexEtau]<<endl;
-	//cout<<"indexEtau: "<<indexEtau<<" ";
+	//cout<<"indexProb: "<<indexProb<<" ";
 	//if(Prob>=0.8){cout<<Prob<<" ";}
 	//cout<<" "<<enerTau[100];
 return Prob ;
@@ -861,7 +858,7 @@ void GetTauDistribution(TH1D *hTauSpec, Double_t d, Double_t expMin = 9.0, Doubl
    hTauSpec->Reset(); //get the energy spectrum of taus coming out of the Earth, starting with nus in the range expmin expMax
    Double_t Enumin = pow(10,expMin);
    Double_t Enumax = pow(10,expMax);
-   Double_t DeltaEnu = (Enumax - Enumin)/20;
+   Double_t DeltaEnu = (Enumax - Enumin)/20; //20
    Double_t Normalization = (nuIndex-1)/(pow(Enumin,1-nuIndex)-pow(Enumax,1-nuIndex)); 
    for(int i=0;i<hTauSpec->GetNbinsX();i++)
        {
@@ -1874,7 +1871,7 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
 //////////////////////////////////////////////////////////////////
 int main (int argc, char **argv) {
 	readFromTable() ;
-
+	findAngleNumber() ;
   //initiate root
   TROOT root("DisplayEvts","Display Results");
   TApplication *theApp = new TApplication("App",&argc,argv);
@@ -1940,7 +1937,7 @@ for(int i=0;i<hTau->GetNbinsX();i++)
   while(Etau<=Eh)
   {
    //  cout<<"Energy "<<E<<endl;
-   //Double_t P = PEtau(100,Etau,Enu) ;//original
+   //Double_t P = PEtau0(100,Etau,Enu) ;//original
 	//cout<<"Enu: "<<log10(Enu)+9<<" ";
 	Double_t P = PEtau0(100,Etau,Enu) ;
    //cout<<"weight: "<<weight<<" ";
@@ -2019,8 +2016,8 @@ cout<<hTau->GetBinCenter(i+1)  <<" taus cont: "<<hTau->GetBinContent(i+1)<<endl;
 }
 
 cout<<endl<<endl;
- cout<<PEtau(166.788,1.42191e+08,5e+09 )<<endl<<endl;
- cout<<PEtau(166.788,1.42191e+09,1e10 )<<endl;
+ cout<<PEtau0(166.788,1.42191e+08,5e+09 )<<endl<<endl;
+ cout<<PEtau0(166.788,1.42191e+09,1e10 )<<endl;
 */
 
 //loop over threshold energy//
