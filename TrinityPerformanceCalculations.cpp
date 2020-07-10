@@ -231,6 +231,12 @@ void findAngleNumber(){
 		}
 	}
 }
+double findThePlane(double a1,n1,p1,a2,n2,p2){
+	vector<double> v1(3) ;
+	v1[0] = a1;
+	v1[1] = n1;
+
+}
 Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 {
 		int indexEnu=0;
@@ -268,7 +274,7 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 
 		}
 	int indexProb = indexEnu*100+indexAngle*100+indexEtau;
-	double Prob = prob[indexProb]/(pow(10,5+(indexEtau+1)*0.07)-pow(10,5+indexEtau*0.07));
+	double Prob = prob[indexProb]/(pow(10,4+(indexEtau+1)*0.07)-pow(10,4+indexEtau*0.07));
 	//double Prob = prob[indexProb] ;
 	//cout<<"indexEnu: "<<enerNu[indexEnu]<<endl<<"indexAngle: "<<angle[indexAngle]<<endl<<"indexEtau: "<<enerTau[indexEtau]<<endl;
 	//cout<<"indexProb: "<<indexProb<<" ";
@@ -760,7 +766,8 @@ return ProbTauDecay;
 
 void PlotEmergenceProbability()
 {
-  TH1D *hTau = new TH1D("hTauS","",50,7,12);
+  TH1D *hTau = new TH1D("hTauS","",50,7,12);//original
+  //TH1D *hTau = new TH1D("hTauS","",100,4,11);
   //hTau->SetMaximum(1);
   hTau->GetXaxis()->SetTitle("energy [GeV]");
   hTau->GetYaxis()->SetTitle("F_tau/F_nu");
@@ -897,7 +904,7 @@ void GetTauDistribution(TH1D *hTauSpec, Double_t d, Double_t expMin = 9.0, Doubl
                     }
                  Enu += DeltaEnu;  
                }
-           }    
+           }
       }//got the energy spectrum of the taus for this azimuth and elevation
 
  /*
@@ -2002,7 +2009,7 @@ bFluorescence = kFALSE;
 //CalculateAcceptanceVsEnergy(hTau);
 //
 //CalculateIntegralSensitivity(hTau);
-CalculateDifferentialSensitivity(hTau);
+//CalculateDifferentialSensitivity(hTau);
 //
 
 /*
