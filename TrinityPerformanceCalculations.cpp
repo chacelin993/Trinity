@@ -202,7 +202,7 @@ int angleNumber;
 vector<double> enerNu,enerTau,prob,angle;
 
 void readFromTable(){
-	ifstream ifs("table_zenith_90_100_e_15_20.txt") ;
+	ifstream ifs("table__with_angle_in_logscale.txt") ;
 	if(ifs.is_open()){
 	ifs>>star;
 		while(ifs.good()){
@@ -217,6 +217,7 @@ void readFromTable(){
 				prob.push_back(number);
 			}
 			ifs>>number;
+			enerTau.push_back(number);
 			ifs>>star;
 		}
 	}
@@ -231,10 +232,20 @@ void findAngleNumber(){
 		}
 	}
 }
-double findThePlane(double a1,n1,p1,a2,n2,p2){
-	vector<double> v1(3) ;
-	v1[0] = a1;
-	v1[1] = n1;
+double findThePlane(double a1,double n1,double p1,double a2,double n2,double p2,double x,double y){
+	vector<double> v1(3),v2(3) ;
+	v1[0] = a2 - a1;
+	v1[1] = 0;
+	v1[2] = (p2 - p1)/2;
+	v2[0] = 0;
+	v2[1] = n2 - n1;
+	v2[2] = (p2 - p1)/2;
+	double a = - v2[1] * v1[2] ;
+	double b = - v1[0] * v2[2] ;
+	double c =   v1[0] * v2[1] ;
+	double p = (a*a1 + b*n1 + c*p1 - a*x - b*y)/c ;
+
+return p ;
 
 }
 Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
@@ -249,7 +260,7 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 		double zenithAngle = 180 - acos(D/2/REarth)/M_PI*180 ;
 		//find which probability the input of this funciton correstponding to
 		for(int i=0;i<enerNu.size();i++){
-			if(Enu>=enerNu[i]-0.1 && Enu<=enerNu[i]+0.1){
+			if(Enu>=enerNu[i] && Enu<=enerNu[i+1]){
 				indexEnu = i ;
 				break;
 			}else{
@@ -257,7 +268,7 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 			}
 		}
 		for(int i=0;i<angleNumber;i++){
-			if(zenithAngle>=angle[i]-0.25 && zenithAngle<=angle[i]+0.25){
+			if(zenithAngle>=angle[i] && zenithAngle<=angle[i+1]){
 				indexAngle=i;
 				break;
 			}else{
@@ -265,16 +276,20 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 			}
 		}
 		for(int i=0;i<100;i++){
-			if(Etau>=enerTau[i]-0.035 && Etau<=enerTau[i]+0.035){
+			if(Etau>=enerTau[i] && Etau<=enerTau[i+1]){
 				indexEtau=i;
 				break;
 			}else{
 				continue;
 			}
-
 		}
-	int indexProb = indexEnu*100+indexAngle*100+indexEtau;
-	double Prob = prob[indexProb]/(pow(10,4+(indexEtau+1)*0.07)-pow(10,4+indexEtau*0.07));
+	int indexProb1 = indexEnu*100+indexAngle*100+indexEtau;
+	double p1 = prob[indexProb1] ;
+	int indexProb2 = (indexEnu+1)*100 + (indexAngle+1)*100 + indexEtau ;
+	double p2 = prob[indexProb2] ;
+
+	double Prob = findThePlane(angle[indexAngle],enerNu[indexEnu],p1,angle[indexAngle+1],enerNu[indexEnu+1],p2,zenithAngle,Enu)/
+					(pow(10,4+(indexEtau+1)*0.07)-pow(10,4+indexEtau*0.07));
 	//double Prob = prob[indexProb] ;
 	//cout<<"indexEnu: "<<enerNu[indexEnu]<<endl<<"indexAngle: "<<angle[indexAngle]<<endl<<"indexEtau: "<<enerTau[indexEtau]<<endl;
 	//cout<<"indexProb: "<<indexProb<<" ";
