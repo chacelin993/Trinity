@@ -246,18 +246,26 @@ double findThePlane(double a1,double n1,double p1,double a2,double n2,double p2,
 	double p = (a*a1 + b*n1 + c*p1 - a*x - b*y)/c ;
 
 return p ;
+}
+double biLinearInterpolation(double a1,double n1,double q11,double a2,double n2,double q22,double x,double y){
+	//this formula is from wiki
+	double q12 = (q11 + q22)/2 ;
+	double q21 = q12 ;
+	double p = (n2-y)/(n2-n1)*( (a2-x)/(a2-a1)*q11 + (x-a1)/(a2-a1)*q21 ) + (y-n1)/(n2-n1)*( (a2-x)/(a2-a1)*q12 + (x-a1)/(a2-a1)*q22 ) ;
 
+return p ;
 }
 Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 {
-		int indexEnu=0;
-		int indexAngle=0;
-		int indexEtau=0;
-		Enu = log10(Enu) + 9.0;
-		Etau = log10(Etau) + 9.0 ;
-		//if(Etau>=18.9) {cout<<Etau<<" ";}
-		//cout<<"Enu: "<<Enu<<" ";
-		double zenithAngle = 180 - acos(D/2/REarth)/M_PI*180 ;
+	int indexEnu=0;
+	int indexAngle=0;
+	int indexEtau=0;
+	Enu = log10(Enu) + 9.0;
+	Etau = log10(Etau) + 9.0 ;
+	//if(Etau>=18.9) {cout<<Etau<<" ";}
+	//cout<<"Enu: "<<Enu<<" ";
+	double zenithAngle = 180 - acos(D/2/REarth)/M_PI*180 ;
+	if(zenithAngle >= 90.01 && zenithAngle <= 100 && Enu>=15.0 && Enu <=20.0){
 		//find which probability the input of this funciton correstponding to
 		for(int i=0;i<enerNu.size();i++){
 			if(Enu>=enerNu[i] && Enu<=enerNu[i+1]){
@@ -283,20 +291,24 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 				continue;
 			}
 		}
-	int indexProb1 = indexEnu*100+indexAngle*100+indexEtau;
-	double p1 = prob[indexProb1] ;
-	int indexProb2 = (indexEnu+1)*100 + (indexAngle+1)*100 + indexEtau ;
-	double p2 = prob[indexProb2] ;
+		int indexProb1 = indexEnu*100+indexAngle*100+indexEtau;
+		double p1 = prob[indexProb1] ;
+		int indexProb2 = (indexEnu+1)*100 + (indexAngle+1)*100 + indexEtau ;
+		double p2 = prob[indexProb2] ;
 
-	double Prob = findThePlane(angle[indexAngle],enerNu[indexEnu],p1,angle[indexAngle+1],enerNu[indexEnu+1],p2,zenithAngle,Enu)/
-					(pow(10,4+(indexEtau+1)*0.07)-pow(10,4+indexEtau*0.07));
-	//double Prob = prob[indexProb] ;
-	//cout<<"indexEnu: "<<enerNu[indexEnu]<<endl<<"indexAngle: "<<angle[indexAngle]<<endl<<"indexEtau: "<<enerTau[indexEtau]<<endl;
-	//cout<<"indexProb: "<<indexProb<<" ";
-	//if(Prob>=0.8){cout<<Prob<<" ";}
-	//cout<<" "<<enerTau[100];
-return Prob ;
+		double Prob = findThePlane(angle[indexAngle],enerNu[indexEnu],p1,angle[indexAngle+1],enerNu[indexEnu+1],p2,zenithAngle,Enu)/
+						(pow(10,4+(indexEtau+1)*0.07)-pow(10,4+indexEtau*0.07));
+		//double Prob = prob[indexProb] ;
+		//cout<<"indexEnu: "<<enerNu[indexEnu]<<endl<<"indexAngle: "<<angle[indexAngle]<<endl<<"indexEtau: "<<enerTau[indexEtau]<<endl;
+		//cout<<"indexProb: "<<indexProb<<" ";
+		//if(Prob>=0.8){cout<<Prob<<" ";}
+		//cout<<" "<<enerTau[100];
+		//double p3 = findThePlane(angle[indexAngle],enerNu[indexEnu],p1,angle[indexAngle+1],enerNu[indexEnu+1],p2,zenithAngle,Enu) ;
 
+		return Prob ;
+	}else{
+		return 0 ;
+	}
 }
 Double_t PEtau(Double_t D,Double_t Etau, Double_t Enu) 
 {
