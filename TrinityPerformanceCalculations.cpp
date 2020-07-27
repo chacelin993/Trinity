@@ -202,7 +202,7 @@ int angleNumber;
 vector<double> enerNu,enerTau,prob,angle;
 
 void readFromTable(){
-	ifstream ifs("table__with_angle_in_logscale.txt") ;
+	ifstream ifs("table_with_finer_energy.txt") ;
 	if(ifs.is_open()){
 	ifs>>star;
 		while(ifs.good()){
@@ -265,7 +265,7 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 	//if(Etau>=18.9) {cout<<Etau<<" ";}
 	//cout<<"Enu: "<<Enu<<" ";
 	double zenithAngle = 180 - acos(D/2/REarth)/M_PI*180 ;
-	if(zenithAngle >= 90.01 && zenithAngle <= 100 && Enu>=15.0 && Enu <=20.0){
+	if(zenithAngle >= 90.002511886431 && zenithAngle <= 115.11886431509579 && Enu>=15.0 && Enu <=20.0){
 		//find which probability the input of this funciton correstponding to
 		for(int i=0;i<enerNu.size();i++){
 			if(Enu>=enerNu[i] && Enu<=enerNu[i+1]){
@@ -1891,11 +1891,11 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
   hTriggeredAzimuthAngles->Scale(1.0/hTriggeredAzimuthAngles->Integral(),"nosw2");
 
   TString Filename;
-  Filename.Form("SensitivityResults/new4/DifferentialSensitivityTrinity_10TimesNSB_%ikmAboveGround_%0.0fsqrmMirror_%0.1fdegUpperFoV_%0.1fdegLowerFoV_%0.1fdegMinShowerLength.root",iConfig,dMirrorA[iMirrorSize],dFoV,dFoVBelow/pi*180.,dMinLength);
+  Filename.Form("SensitivityResults/DifferentialSensitivityTrinity_10TimesNSB_%ikmAboveGround_%0.0fsqrmMirror_%0.1fdegUpperFoV_%0.1fdegLowerFoV_%0.1fdegMinShowerLength.root",iConfig,dMirrorA[iMirrorSize],dFoV,dFoVBelow/pi*180.,dMinLength);
   cDiffSensitivity->SaveAs(Filename.Data());
-  Filename.Form("SensitivityResults/new4/AcceptanceTrinity_10TimesNSB_%ikmAboveGround_%0.0fsqrmMirror_%0.1fdegUpperFoV_%0.1fdegLowerFoV_%0.1fdegMinShowerLength.root",iConfig,dMirrorA[iMirrorSize],dFoV,dFoVBelow/pi*180.,dMinLength);
+  Filename.Form("SensitivityResults/AcceptanceTrinity_10TimesNSB_%ikmAboveGround_%0.0fsqrmMirror_%0.1fdegUpperFoV_%0.1fdegLowerFoV_%0.1fdegMinShowerLength.root",iConfig,dMirrorA[iMirrorSize],dFoV,dFoVBelow/pi*180.,dMinLength);
   cAcceptance->SaveAs(Filename.Data());
-  Filename.Form("SensitivityResults/new4/TriggeredAzimuthTrinity_10TimesNSB_%ikmAboveGround_%0.0fsqrmMirror_%0.1fdegUpperFoV_%0.1fdegLowerFoV_%0.1fdegMinShowerLength.root",iConfig,dMirrorA[iMirrorSize],dFoV,dFoVBelow/pi*180.,dMinLength);
+  Filename.Form("SensitivityResults/TriggeredAzimuthTrinity_10TimesNSB_%ikmAboveGround_%0.0fsqrmMirror_%0.1fdegUpperFoV_%0.1fdegLowerFoV_%0.1fdegMinShowerLength.root",iConfig,dMirrorA[iMirrorSize],dFoV,dFoVBelow/pi*180.,dMinLength);
   cTriggeredAzimuthAngles->SaveAs(Filename.Data());
 }
 
@@ -2036,7 +2036,7 @@ bFluorescence = kFALSE;
 //CalculateAcceptanceVsEnergy(hTau);
 //
 //CalculateIntegralSensitivity(hTau);
-//CalculateDifferentialSensitivity(hTau);
+CalculateDifferentialSensitivity(hTau);
 //
 
 /*
