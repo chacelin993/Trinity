@@ -202,7 +202,7 @@ int angleNumber;
 vector<double> enerNu,enerTau,prob,angle;
 
 void readFromTable(){
-	ifstream ifs("table_with_finer_energy.txt") ;
+	ifstream ifs("table_with_finer_interval0.txt") ;
 	if(ifs.is_open()){
 	ifs>>star;
 		while(ifs.good()){
@@ -265,7 +265,7 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 	//if(Etau>=18.9) {cout<<Etau<<" ";}
 	//cout<<"Enu: "<<Enu<<" ";
 	double zenithAngle = 180 - acos(D/2/REarth)/M_PI*180 ;
-	if(zenithAngle >= 90.002511886431 && zenithAngle <= 115.11886431509579 && Enu>=15.0 && Enu <=20.0){
+	if(zenithAngle >= angle[0] && zenithAngle <= angle[angleNumber-1] && Enu>=enerNu[0] && Enu <=enerNu[enerNu.size()-1]){
 		//find which probability the input of this funciton correstponding to
 		for(int i=0;i<enerNu.size();i++){
 			if(Enu>=enerNu[i] && Enu<=enerNu[i+1]){
@@ -2036,7 +2036,7 @@ bFluorescence = kFALSE;
 //CalculateAcceptanceVsEnergy(hTau);
 //
 //CalculateIntegralSensitivity(hTau);
-CalculateDifferentialSensitivity(hTau);
+//CalculateDifferentialSensitivity(hTau);
 //
 
 /*

@@ -9,6 +9,8 @@ void PlotSensitivityCurvesNSB()
    int iDefNum = 0;  
   
    TGraph *gr[4];
+   TGraph *g ;
+   TGraph *gra ;
    TMultiGraph *mgr = new TMultiGraph();
 
   TLegend *leg = new TLegend(0.34,0.54,0.65,0.9,"NSB");
@@ -17,11 +19,10 @@ void PlotSensitivityCurvesNSB()
    for(int d=0;d<3;d++)
     {
       TString sFileName;
-      sFileName.Form("/home/mayamember/Trinity/SensitivityResults/DifferentialSensitivityTrinity_1.root",dNSB[d]);
+      sFileName.Form("/home/mayamember/Trinity/SensitivityResults/DifferentialSensitivityTrinity_original.root",dNSB[d]);
       TFile f(sFileName.Data());
       TCanvas *c1 = (TCanvas*)f.Get("cDiffSensitivity");
       gr[d] = (TGraph*)c1->FindObject("");
-       
       //h[d]->SetStats(0);
       gr[d]->SetLineWidth(2);
       if(d==iDefNum)
@@ -35,6 +36,21 @@ void PlotSensitivityCurvesNSB()
       f.Close();
     }
    //for(int d=5;d>0;d--)
+
+   TString zFileName ;
+   TString yFileName ;
+   zFileName.Form("/home/mayamember/Trinity/SensitivityResults/DifferentialSensitivityTrinity_1.root") ;
+   TFile z(zFileName.Data()) ;
+   TCanvas *c2 = (TCanvas*)z.Get("cDiffSensitivity") ;
+   g = (TGraph*)c2->FindObject("") ;
+   mgr->Add(g) ;
+   z.Close();
+
+   yFileName.Form("/home/mayamember/Trinity/SensitivityResults/DifferentialSensitivityTrinity_0.root") ;
+   TFile y(yFileName.Data()) ;
+   TCanvas *c3 = (TCanvas*)y.Get("cDiffSensitivity") ;
+   gra = (TGraph*)c3->FindObject("") ;
+   mgr->Add(gra) ;
 
    TCanvas *c = new TCanvas("c","Sensitivity",750,500);
       c->cd();
