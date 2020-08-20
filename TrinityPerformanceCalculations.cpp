@@ -202,7 +202,7 @@ int angleNumber;
 vector<double> enerNu,enerTau,prob,angle;
 
 void readFromTable(){
-	ifstream ifs("table_with_finer_interval0.txt") ;
+	ifstream ifs("table_with_finer_interval1.txt") ;
 	if(ifs.is_open()){
 	ifs>>star;
 		while(ifs.good()){
@@ -2036,7 +2036,7 @@ bFluorescence = kFALSE;
 //CalculateAcceptanceVsEnergy(hTau);
 //
 //CalculateIntegralSensitivity(hTau);
-//CalculateDifferentialSensitivity(hTau);
+CalculateDifferentialSensitivity(hTau);
 //
 
 /*
