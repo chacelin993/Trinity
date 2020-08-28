@@ -202,7 +202,7 @@ int angleNumber;
 vector<double> enerNu,enerTau,prob,angle;
 
 void readFromTable(){
-	ifstream ifs("table_with_finer_interval1.txt") ;
+	ifstream ifs("table_with_finer_interval2.txt") ;
 	if(ifs.is_open()){
 	ifs>>star;
 		while(ifs.good()){
@@ -220,6 +220,7 @@ void readFromTable(){
 			enerTau.push_back(number);
 			ifs>>star;
 		}
+		cout << "size: " << enerNu.size() << endl;
 	}
 }
 void findAngleNumber(){
