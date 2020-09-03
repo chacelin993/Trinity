@@ -202,7 +202,7 @@ int angleNumber;
 vector<double> enerNu,enerTau,prob,angle;
 
 void readFromTable(){
-	ifstream ifs("table_with_finer_interval2.txt") ;
+	ifstream ifs("table_with_lessfine_interval.txt") ;
 	if(ifs.is_open()){
 	ifs>>star;
 		while(ifs.good()){

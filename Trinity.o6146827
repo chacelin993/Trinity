@@ -3792,3 +3792,15 @@ distance: 435 differ. acceptance 0 integr. acceptance.: 1.85718e+10
 0  2.87095e+06
 Energy 10.5 to 11.5 acceptance:  1.85718e+10 nuFnu: 2.99962e-07 for power law with index -2
 done
+---------------------------------------
+Begin PBS Epilogue Wed Sep  2 15:05:23 EDT 2020
+Job ID:     6146827.sched-hive.pace.gatech.edu
+User ID:    clin373
+Job name:   Trinity
+Resources:  nodes=1:ppn=8,mem=8gb,walltime=48:00:00,neednodes=1:ppn=8
+Rsrc Used:  cput=26:25:52,vmem=536564kb,walltime=26:29:41,mem=41276kb,energy_used=0
+Queue:      hive
+Nodes:     
+atl1-1-01-013-15-r.pace.gatech.edu
+End PBS Epilogue Wed Sep  2 15:05:23 EDT 2020
+---------------------------------------
