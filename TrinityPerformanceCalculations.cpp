@@ -82,7 +82,7 @@ Double_t MaxElevation = 10; //elevation angle (determines path through Earth;
 Double_t DeltaAngle = 0.1; //steps in azimuth and elevation 
 Double_t DeltaAngleAz = 0.3; //steps in azimuth  
 Double_t nuIndex = 2; //power law index of the neutrino spectrum the minus sign is added later
-Double_t dMaxCherenkovAzimuthAngle = 40.0; //maximum azimuth angle for cherenkov 
+Double_t dMaxCherenkovAzimuthAngle = 60.0; //maximum azimuth angle for cherenkov, was 40.0 
 Double_t dMaxFluorescenceDistance = 100;
 
 //next three parameters are key to the instrument
@@ -202,7 +202,7 @@ int angleNumber;
 vector<double> enerNu,enerTau,prob,angle;
 
 void readFromTable(){
-	ifstream ifs("table_with_lessfine_interval.txt") ;
+	ifstream ifs("table_with_finer_interval2.txt") ;
 	if(ifs.is_open()){
 	ifs>>star;
 		while(ifs.good()){
@@ -1791,13 +1791,13 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
     yMin = 5; //5
     yMax = 500; //500
     yDelta = 5; //5
-    MaxElevation = 10; //elevation angle (determines path through Earth;
+    MaxElevation = 10; //elevation angle (determines path through Earth, was 10;
     DeltaAngle = 0.05; //steps in azimuth and elevation 
 
     iConfig = 2; //telescope altitude
   
     //exposure
-    Double_t dExposure=3*365*24*3600*0.20; //exposure time 3 years in seconds with 20% duty cycle
+    Double_t dExposure=10*365*24*3600*0.20; //exposure time 3 years in seconds with 20% duty cycle
 
     Double_t dFoV = 2;  //test 0, 1, 2, 10
     tanFoV = tan(dFoV/180.*pi);
