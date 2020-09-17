@@ -19,9 +19,9 @@ void PlotSensitivityCurvesNSB()
    for(int d=0;d<3;d++)
     {
       TString sFileName;
-      sFileName.Form("/home/mayamember/Trinity/SensitivityResults/DifferentialSensitivityTrinity_6.root",dNSB[d]);
+      sFileName.Form("/home/mayamember/Trinity/SensitivityResults/AcceptanceTrinity_e_05_1_maxElevation_10_maxAzi_60.root",dNSB[d]);
       TFile f(sFileName.Data());
-      TCanvas *c1 = (TCanvas*)f.Get("cDiffSensitivity");
+      TCanvas *c1 = (TCanvas*)f.Get("cAcceptance");
       gr[d] = (TGraph*)c1->FindObject("");
       //h[d]->SetStats(0);
       gr[d]->SetLineWidth(2);
@@ -37,14 +37,14 @@ void PlotSensitivityCurvesNSB()
     }
    //for(int d=5;d>0;d--)
 
-//   TString zFileName ;
-//   TString yFileName ;
-//   zFileName.Form("/home/mayamember/Trinity/SensitivityResults/DifferentialSensitivityTrinity_original.root") ;
-//   TFile z(zFileName.Data()) ;
-//   TCanvas *c2 = (TCanvas*)z.Get("cDiffSensitivity") ;
-//   g = (TGraph*)c2->FindObject("") ;
-//   mgr->Add(g) ;
-//   z.Close();
+   TString zFileName ;
+   TString yFileName ;
+   zFileName.Form("/home/mayamember/Trinity/SensitivityResults/AcceptanceTrinity_e_05_1_maxElevation_30_maxAzi_60.root") ;
+   TFile z(zFileName.Data()) ;
+   TCanvas *c2 = (TCanvas*)z.Get("cAcceptance") ;
+   g = (TGraph*)c2->FindObject("") ;
+   mgr->Add(g) ;
+   z.Close();
 //
 //   yFileName.Form("/home/mayamember/Trinity/SensitivityResults/DifferentialSensitivityTrinity_1.root") ;
 //   TFile y(yFileName.Data()) ;
@@ -67,7 +67,7 @@ void PlotSensitivityCurvesNSB()
    mgr->GetXaxis()->SetLabelSize(0.045);
    mgr->GetYaxis()->SetTitleOffset(1.1);
    mgr->GetXaxis()->SetTitleOffset(1.2);
-   mgr->SetMinimum(1e-9);
-   mgr->SetMaximum(1e-6);
-  leg->Draw();
+   mgr->SetMinimum(1e5);
+   mgr->SetMaximum(4e10);
+  //leg->Draw();
 }
