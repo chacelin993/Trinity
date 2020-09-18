@@ -200,9 +200,21 @@ string star ;
 double number;
 int angleNumber;
 vector<double> enerNu,enerTau,prob,angle;
-
+int rem = 0 ;
+void removeDuplicates()
+{
+	while(rem < enerNu.size()-1){
+		if(enerNu[rem]==enerNu[rem+1]){
+			enerNu.erase(enerNu.begin()+rem+1);
+			removeDuplicates();
+		}else if(enerNu[rem+1]==enerNu[rem+2]){
+			rem ++;
+			removeDuplicates();
+		}
+	}
+}
 void readFromTable(){
-	ifstream ifs("table_with_finer_interval2.txt") ;
+	ifstream ifs("table_with_finer_energy.txt") ;
 	if(ifs.is_open()){
 	ifs>>star;
 		while(ifs.good()){
@@ -221,6 +233,7 @@ void readFromTable(){
 			ifs>>star;
 		}
 		cout << "size: " << enerNu.size() << endl;
+		removeDuplicates() ;
 	}
 }
 void findAngleNumber(){
@@ -292,12 +305,12 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 				continue;
 			}
 		}
-		int indexProb1 = indexEnu*100+indexAngle*100+indexEtau;
+		int indexProb1 = indexEnu*angleNumber*100+indexAngle*100+indexEtau;
 		double p1 = prob[indexProb1] ;
-		int indexProb2 = (indexEnu+1)*100 + (indexAngle+1)*100 + indexEtau ;
+		int indexProb2 = (indexEnu+1)*angleNumber*100 + (indexAngle+1)*100 + indexEtau ;
 		double p2 = prob[indexProb2] ;
 
-		double Prob = findThePlane(angle[indexAngle],enerNu[indexEnu],p1,angle[indexAngle+1],enerNu[indexEnu+1],p2,zenithAngle,Enu)/
+		double Prob = biLinearInterpolation(angle[indexAngle],enerNu[indexEnu],p1,angle[indexAngle+1],enerNu[indexEnu+1],p2,zenithAngle,Enu)/
 						(pow(10,4+(indexEtau+1)*0.07)-pow(10,4+indexEtau*0.07));
 		//double Prob = prob[indexProb] ;
 		//cout<<"indexEnu: "<<enerNu[indexEnu]<<endl<<"indexAngle: "<<angle[indexAngle]<<endl<<"indexEtau: "<<enerTau[indexEtau]<<endl;
@@ -305,7 +318,9 @@ Double_t PEtau0(Double_t D,Double_t Etau,Double_t Enu)
 		//if(Prob>=0.8){cout<<Prob<<" ";}
 		//cout<<" "<<enerTau[100];
 		//double p3 = findThePlane(angle[indexAngle],enerNu[indexEnu],p1,angle[indexAngle+1],enerNu[indexEnu+1],p2,zenithAngle,Enu) ;
-
+//		if(Enu <= 15.1 ){
+//			cout << Prob << " " ;
+//		}
 		return Prob ;
 	}else{
 		return 0 ;
@@ -794,7 +809,7 @@ return ProbTauDecay;
 
 void PlotEmergenceProbability()
 {
-  TH1D *hTau = new TH1D("hTauS","",50,7,12);//original
+  TH1D *hTau = new TH1D("hTauS","",100,4,11);//original 50, 7,12
   //TH1D *hTau = new TH1D("hTauS","",100,4,11);
   //hTau->SetMaximum(1);
   hTau->GetXaxis()->SetTitle("energy [GeV]");
@@ -814,7 +829,7 @@ void PlotEmergenceProbability()
 
 
   double Enulog = 11;
-  double Enuminlog = 6;
+  double Enuminlog = 5.9;
   double Enusteplog = 0.5;
   int s=0;
   while(Enulog>Enuminlog)
@@ -874,7 +889,7 @@ void PlotEmergenceProbability()
   mg->GetYaxis()->SetTitleOffset(1.0);
   mg->GetYaxis()->SetTitleSize(0.045);
   mg->GetYaxis()->SetLabelSize(0.045);
-  mg->GetYaxis()->SetRangeUser(1e-4,1);
+  mg->GetYaxis()->SetRangeUser(1e-7,1);
  // mg->GetXaxis()->SetRangeUser(1,5e3);
   leg->Draw();
   //TF1 *fdeg=new TF1("fdeg","90-180/3.1415*TMath::ASin(0.5*x/6371)",0,1e4);
@@ -2037,7 +2052,7 @@ bFluorescence = kFALSE;
 //CalculateAcceptanceVsEnergy(hTau);
 //
 //CalculateIntegralSensitivity(hTau);
-CalculateDifferentialSensitivity(hTau);
+//CalculateDifferentialSensitivity(hTau);
 //
 
 /*
