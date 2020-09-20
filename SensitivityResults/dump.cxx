@@ -27,7 +27,7 @@ void dump(){
 	
 	ofstream myFile;
 	myFile.open("SensitivityTrinity_e_05_1_maxElevation_10.txt") ;
-	TH1F *Enu = new TH1F("Enu", "", 100, 6, 11) ;
+	TH1F *Enu = new TH1F("Enu", "", 500, 6, 11) ;
 	//cout << Enu->GetNbinsX () << endl;
 	for(int i=1;i <= Enu->GetNbinsX();i++){
 		double enerNu = pow(10, Enu->GetBinLowEdge(i)) ;
