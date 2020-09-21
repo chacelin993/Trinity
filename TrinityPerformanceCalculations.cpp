@@ -2052,7 +2052,7 @@ bFluorescence = kFALSE;
 //CalculateAcceptanceVsEnergy(hTau);
 //
 //CalculateIntegralSensitivity(hTau);
-//CalculateDifferentialSensitivity(hTau);
+CalculateDifferentialSensitivity(hTau);
 //
 
 /*
