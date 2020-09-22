@@ -214,7 +214,7 @@ void removeDuplicates()
 	}
 }
 void readFromTable(){
-	ifstream ifs("table_with_e_05_a_1.txt") ;
+	ifstream ifs("table_with_e_1_a_1.txt") ;
 	if(ifs.is_open()){
 	ifs>>star;
 		while(ifs.good()){
