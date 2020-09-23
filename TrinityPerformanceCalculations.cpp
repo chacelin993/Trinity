@@ -214,7 +214,7 @@ void removeDuplicates()
 	}
 }
 void readFromTable(){
-	ifstream ifs("table_with_e_1_a_1.txt") ;
+	ifstream ifs("table_with_e_05_a_1.txt") ;
 	if(ifs.is_open()){
 	ifs>>star;
 		while(ifs.good()){
@@ -1806,7 +1806,7 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
     yMin = 5; //5
     yMax = 500; //500
     yDelta = 5; //5
-    MaxElevation = 10; //elevation angle (determines path through Earth, was 10;
+    MaxElevation = 30; //elevation angle (determines path through Earth, was 10;
     DeltaAngle = 0.05; //steps in azimuth and elevation 
 
     iConfig = 2; //telescope altitude
