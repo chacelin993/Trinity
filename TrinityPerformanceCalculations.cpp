@@ -198,7 +198,7 @@ return fabs(i2-i1);
 
 string star ;
 double number;
-int angleNumber;
+int angleNumber, totalIndex;
 vector<double> enerNu,enerTau,prob,angle;
 int rem = 0 ;
 void removeDuplicates()
@@ -214,9 +214,9 @@ void removeDuplicates()
 	}
 }
 void readFromTable(){
-	ifstream ifs("table_with_e_05_a_1.txt") ;
+	ifstream ifs("table_with_e_2_a_1.txt") ;
 	if(ifs.is_open()){
-	ifs>>star;
+		ifs>>star;
 		while(ifs.good()){
 			ifs>>number;
 			enerNu.push_back(number);
@@ -232,14 +232,18 @@ void readFromTable(){
 			enerTau.push_back(number);
 			ifs>>star;
 		}
+		totalIndex = enerNu.size() ;
 		cout << "size: " << enerNu.size() << endl;
 		removeDuplicates() ;
+	}else{
+		cout << "lookup table not open" << endl;
 	}
 }
 void findAngleNumber(){
-	for(int i=1;i<enerNu.size();i++){
+	for(int i=1;i<totalIndex;i++){
 		if(angle[0]==angle[i]){
 			angleNumber = i;
+			cout << "angle number: " << angleNumber << endl;
 			break;
 		}else{
 			continue ;
@@ -809,7 +813,7 @@ return ProbTauDecay;
 
 void PlotEmergenceProbability()
 {
-  TH1D *hTau = new TH1D("hTauS","",100,4,11);//original 50, 7,12
+  TH1D *hTau = new TH1D("hTauS","",100,7,12);//original 50, 7,12
   //TH1D *hTau = new TH1D("hTauS","",100,4,11);
   //hTau->SetMaximum(1);
   hTau->GetXaxis()->SetTitle("energy [GeV]");
@@ -2052,7 +2056,7 @@ bFluorescence = kFALSE;
 //CalculateAcceptanceVsEnergy(hTau);
 //
 //CalculateIntegralSensitivity(hTau);
-CalculateDifferentialSensitivity(hTau);
+//CalculateDifferentialSensitivity(hTau);
 //
 
 /*
