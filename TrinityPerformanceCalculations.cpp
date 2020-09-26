@@ -214,7 +214,7 @@ void removeDuplicates()
 	}
 }
 void readFromTable(){
-	ifstream ifs("table_with_e_2_a_1.txt") ;
+	ifstream ifs("table__with_angle_in_logscale.txt") ;
 	if(ifs.is_open()){
 		ifs>>star;
 		while(ifs.good()){
