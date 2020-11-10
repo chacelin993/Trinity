@@ -211,7 +211,7 @@ void removeDuplicates()
 	}
 }
 void readFromTable(){
-	ifstream ifs("table_with_e_05_a_1.txt") ;
+	ifstream ifs("table_with_e_05_a_1_extend.txt") ;
 	if(ifs.is_open()){
 	ifs>>star;
 		while(ifs.good()){
@@ -221,11 +221,11 @@ void readFromTable(){
 			//angle.push_back(number);
 			dist.push_back(cos((180-number)*pi/180)*2*REarth);
 			for(int i=0;i<100;i++){
-				ifs>>number;
+				ifs>>number ;
 				enerTau.push_back( pow(10,number-9.0) );
                                 EtauNorm.push_back( pow(10,4+i*0.07) );
-				ifs>>number;
-				prob.push_back(number);
+				ifs>>number ;
+				prob.push_back(number) ;
 			}
 			ifs>>number;
 			enerTau.push_back( pow(10,number-9.0) );
@@ -1792,7 +1792,7 @@ void CalculateAcceptanceVsThreshold(TH1D *hTau)
 //
 
 void CalculateIntegralSensitivity0(TH1D *hTau){
-	const double gam = 2.2 ;
+	const double gam = 2.1 ;
 	const double t = 5 * 365*24*60*60;
 	const double Eo = pow(10,8) ;
 	double dE_log = 0.2 ;
@@ -1834,6 +1834,9 @@ void CalculateIntegralSensitivity0(TH1D *hTau){
 	grSensitivity->GetYaxis()->SetLabelSize(0.04);
 	grSensitivity->GetXaxis()->SetTitleSize(0.04);
 	grSensitivity->GetXaxis()->SetLabelSize(0.04);
+	TString Filename;
+	Filename.Form("IntegrSensitivity/IntegralSensitivity_Index_%0.1f.root",gam);
+	cIntSensitivity->SaveAs(Filename.Data());
 
 }
 
@@ -1920,8 +1923,8 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
 
     Double_t dLogEnergyStep = 0.2; //0.2
     Double_t dHalfEnergyBinWidth =1/2.; //in log was 1/2
-    Double_t logEmin = 6; //7
-    Double_t logEmax = 10.5; //11
+    Double_t logEmin = 5; //7
+    Double_t logEmax = 11; //11
 
     bCombined = kTRUE;
     yMin = 5; //5
