@@ -14,6 +14,10 @@
 
 #include <stdio.h>
 
+#include <iostream>
+#include <fstream>
+#include <string>
+
 using namespace std;
 
 Double_t sigma[] = { 660, 920, 1400, 1900, 2500, 3700, 4800, 6200, 8700, 11000, 14000, 19000, 24000, 30000, 39000, 48000, 59000, 75000 }; //pb cc cross section cooper-sarkar 2011
@@ -170,7 +174,7 @@ Double_t DistanceThroughEarth(Double_t y, Double_t elevation, Double_t azimuth)
   
   //normalized trajectory vector of tau
   Double_t dNormalize = y/sqrt(denomsquared);
-  Double_t dNx = dNormalize * tan(azimuth);
+  //Double_t dNx = dNormalize * tan(azimuth);
   Double_t dNy = -dNormalize;
   Double_t dNz = dNormalize * sqrt( 1 + tan(azimuth)*tan(azimuth) ) * tan(elevation);
 
@@ -188,15 +192,173 @@ return fabs(i2-i1);
 
 }
 
+
+string star ;
+double number;
+int distanceNumber;
+vector<double> enerNu,enerTau,prob,dist,EtauNorm;
+unsigned rem = 0 ;
+void removeDuplicates()
+{
+	while(rem < enerNu.size()-1){
+		if(enerNu[rem]==enerNu[rem+1]){
+			enerNu.erase(enerNu.begin()+rem+1);
+			removeDuplicates();
+		}else if(enerNu[rem+1]==enerNu[rem+2]){
+			rem ++;
+			removeDuplicates();
+		}
+	}
+}
+void readFromTable(){
+	ifstream ifs("table_with_e_05_a_1_extend.txt") ;
+	if(ifs.is_open()){
+	ifs>>star;
+		while(ifs.good()){
+			ifs>>number;
+			enerNu.push_back( pow(10,number-9.0) );
+			ifs>>number;
+			//angle.push_back(number);
+			dist.push_back(cos((180-number)*pi/180)*2*REarth);
+			for(int i=0;i<100;i++){
+				ifs>>number ;
+				enerTau.push_back( pow(10,number-9.0) );
+                                EtauNorm.push_back( pow(10,4+i*0.07) );
+				ifs>>number ;
+				prob.push_back(number) ;
+			}
+			ifs>>number;
+			enerTau.push_back( pow(10,number-9.0) );
+                        EtauNorm.push_back( pow(10,4+100*0.07) );
+			ifs>>star;
+		}
+		cout << "size: " << enerNu.size() << endl;
+		removeDuplicates() ;
+	}
+}
+void findAngleNumber(){
+	for(unsigned i=1;i<enerNu.size();i++){
+		if(dist[0]==dist[i]){
+			distanceNumber = i;
+			break;
+		}else{
+			continue ;
+		}
+	}
+}
+double biLinearInterpolation(double a1,double n1,double q11,double a2,double n2,double q22,double x,double y){
+	double q12 = (q11 + q22)/2 ;
+	double q21 = q12 ;
+	double p = (n2-y)/(n2-n1)*( (a2-x)/(a2-a1)*q11 + (x-a1)/(a2-a1)*q21 ) + (y-n1)/(n2-n1)*( (a2-x)/(a2-a1)*q12 + (x-a1)/(a2-a1)*q22 ) ;
+
+return p ;
+}
+
+//Find index in lookuptable
+int FindLion(double dValue, vector<double> &vData,int iSize)
+{
+          int iWidth = iSize/2;
+          int index = iWidth;
+          //cout<<dValue<<": ";
+          while(iWidth>1 && vData[index]!=dValue && index > 0  && index <iSize)
+            {
+              iWidth = iWidth/2+ iWidth%2;
+              index = vData[index]<dValue ? index + iWidth :  index - iWidth;
+              //cout<<index<<" "<<iWidth<<"  "<<vData[index]<<"; ";
+            }
+          while((dValue>vData[index] || index<0) && index < iSize)
+             index++;
+          index--;
+
+          if(dValue==vData[index] || index>=iSize)
+             index--;
+
+          if(index<0)
+            index=0; 
+ 
+         //cout<<index<<endl;
+
+return index;
+}
+//Calculates the probability of tau emergence using NuTauSim LUT
+Double_t PEtau(Double_t D,Double_t Etau, Double_t Enu, TH1D *hTau) 
+{
+	//Enu = log10(Enu) + 9.0;
+	//Etau = log10(Etau) + 9.0 ;
+	//double zenithAngle = 180 - acos(D/2/REarth)/M_PI*180 ;
+//	if(zenithAngle >= angle[0] && zenithAngle <= angle[angleNumber-1] && Enu>=enerNu[0] && Enu <=enerNu[enerNu.size()-1]){
+	if(D >= dist[0] && D <= dist[distanceNumber-1] && Enu>=enerNu[0] && Enu <=enerNu[enerNu.size()-1] && Etau>=enerTau[0] && Etau <=enerTau[100]){
+
+         int indexEnu = FindLion(Enu,enerNu,enerNu.size());
+
+	 int indexDistance = FindLion(D,dist,distanceNumber);
+
+	 int indexEtau = FindLion(Etau,enerTau,100);
+		
+                int indexProb1 = indexEnu*distanceNumber*100+indexDistance*100+indexEtau;
+		double p1 = prob[indexProb1] ;
+		int indexProb2 = (indexEnu+1)*distanceNumber*100 + (indexDistance+1)*100 + indexEtau ;
+		double p2 = prob[indexProb2] ;
+
+		double Prob = biLinearInterpolation(dist[indexDistance],enerNu[indexEnu],p1,dist[indexDistance+1],enerNu[indexEnu+1],p2,D,Enu)/
+						(EtauNorm[indexEtau+1]-EtauNorm[indexEtau]);
+						//(pow(10,4+(indexEtau+1)*0.07)-pow(10,4+indexEtau*0.07));
+		//cout<<Prob<<endl;
+		return Prob ;
+	}else{
+		return 0 ;
+	}
+}
+
+
+
+//Probability that Tau with Energy Etau emerges for initial nu energy Enu
+//Thickness of matter d 
+//Does not use energy loss of tau in Earth.
+//Assumes the energy of the tau is 0.8*Enu
+//Double_t PEtauNoTauEnergyLoss(Double_t D,Double_t Etau, Double_t Enu, TH1D *hTau) 
+//Double_t PEtauNoTauEnergyLoss(Double_t D,Double_t Etau, Double_t Enu, TH1D *hTau) 
+Double_t PEtauNoEnergyLoss(Double_t D,Double_t Etau, Double_t Enu, TH1D *hTau) 
+{
+
+int n = hTau->FindBin(Etau);
+if(hTau->GetBinLowEdge(n)>0.8*Enu  || hTau->GetBinLowEdge(n+1)<0.8*Enu )
+	return 0;
+
+
+
+Double_t sCC = grsCC->Eval(Enu); //crossection in pB
+Double_t sNC = grsNC->Eval(Enu); //crossection in pB
+Double_t rho = 2.65; //density in g/cm3
+Double_t NA = 6.022142e23;
+
+Double_t dInvConvCC = sCC*rho*NA*1e-31; // 1/km 1e-12*1e-28*1e4*1e5
+Double_t db = (sNC+sCC)*rho*NA*1e-31; // 1/km
+Double_t da = Mtau/(DecayTime*c*0.8*Enu); //1/km
+
+//cout<<dInvConvCC<<endl;
+//cout<<"neutrino interaction: "<<db<<" "<<exp(-1.0*db*D)<<endl;
+//cout<<"tau survival: "<<da<<"  "<<exp(-1.0*da*D)<<endl;
+
+Double_t Prob = dInvConvCC / (da-db) * ( exp(-1.0*db*D)-exp(-1.0*da*D) );  
+
+if(Prob<0)
+  return 0;
+
+Prob /= (hTau->GetBinLowEdge(n+1)-hTau->GetBinLowEdge(n));
+return Prob;  
+}
+
 //Probability that Tau with Energy Etau emerges for initial nu energy Enu
 //Thickness of matter d 
 //follows description in Dutta 2005 in particular equation 28 with
 //parameterization of beta in equation 13 case II
 //energies in GeV distances in km at inptut
-Double_t PEtau(Double_t D,Double_t Etau, Double_t Enu) 
+//Fails <1e8 GeV because energy loss (Beta) becoms <0
+Double_t PEtauDutta(Double_t D,Double_t Etau, Double_t Enu,TH1D *hTau) 
 {
 
-if(Etau>Enu)
+if(Etau>0.8*Enu)
   return 0;
 
 Double_t sCC = grsCC->Eval(Enu); //crossection in pB
@@ -265,9 +427,9 @@ Double_t PDecayFluorescence(Double_t Etau, Double_t y, Double_t elevation, Doubl
 
   //crossproduct of trajectory vector and vector of where tau emerges. Gives the
   //distance between the to perpendicular to the trajecotory vector
-  Double_t dx = y*dNz; 
-  Double_t dy = 0;
-  Double_t dz = y*dNx;
+  //Double_t dx = y*dNz; 
+  //Double_t dy = 0;
+  //Double_t dz = y*dNx;
 
   //Double_t d = sqrt(dx*dx+dy*dy+dz*dz); //shortest distance d between tau trajectory and detector
 
@@ -292,17 +454,19 @@ Double_t PDecayFluorescence(Double_t Etau, Double_t y, Double_t elevation, Doubl
   Double_t dED = 0; //extra distance
   Double_t dInFoV=0; //Distance in between lower edge of FoV and line of sight to horizon
 
-  //Reset FoV below to maximum possible if it is larger
+  //If the camera FoV below the horizon is larger than the maximum angle needed to
+  //cover all the solid angle below the horizon, set the FoV below the horizon
+  //to the maximum angle needed.
   Double_t dMaxFoVBelow = asin(REarth/(REarth+DetectorAltitude[iConfig]));
   if(dFoVBelow>dMaxFoVBelow)
       dFoVBelow=dMaxFoVBelow; 
 
 
-  //length of trajectory between plane to horizon and lower edge of camera
-  //FoV
+  //length of the visible trajectory between the plane to horizon and the lower edge of the camera
+  //FoV below the horizon
   dInFoV = l * sin(dFoVBelow) / ( dNy * sin(dFoVBelow) +  dNz * cos(dFoVBelow)  );
 
-  //length of trajectory between plane to horizon and earth surface
+  //length of tau trajectory below the horizon and earth surface
   Double_t p = 2 * ( REarth*dNz - (v-l)*dNy );
   Double_t q = (v-l)*(v-l);
 
@@ -331,11 +495,11 @@ Double_t PDecayFluorescence(Double_t Etau, Double_t y, Double_t elevation, Doubl
                                + sin(elevation)*sin(elevation)/tanFoV/tanFoV
                                - cos(elevation)*cos(elevation);
 
-  if(dTermInSquareRoot>0) //if it is negative the shower if contained in the FoV anywhere along the track
+  if(dTermInSquareRoot>0) //if it is negative the shower is contained in the FoV anywhere along the track
     {
         //maximum trajectory length before the tip of the shower is not contained in the camera anymore
        Double_t dMaxDisttoSatisfyFovReq = l / ( cos(elevation)*cos(azimuth) + sqrt( dTermInSquareRoot ));
-       //if the value is negative the elevation angle is less than the Max FoV would have to point below the
+       //if the value is negative, the elevation angle is less than the Max FoV would have to point below the
        //horizon
        if(dMaxDist>dMaxDisttoSatisfyFovReq+dInFoV && dMaxDisttoSatisfyFovReq>0) //correct max. trajectory length
            dMaxDist = dMaxDisttoSatisfyFovReq+dInFoV;
@@ -449,11 +613,11 @@ Double_t PDecay(Double_t Etau, Double_t y, Double_t elevation, Double_t azimuth)
   elevation = elevation/180*pi; //elevation angle (determines path through Earth;
   azimuth = azimuth/180.*pi;  //azimuth angle
 
-  Double_t l = y; //Distance from detector to where the tau comes out detector is always at z=0
+  Double_t l = y; //Distance between the detector and the point where the tau emerges from the ground. The detector is always at z=0
   //Distance between telescope and horizon
   Double_t v = sqrt((REarth+DetectorAltitude[iConfig])*(REarth+DetectorAltitude[iConfig])-REarth*REarth);
 
-  //shortest distance d between tau trajectory and detector
+  //Below: the shortest distance d between tau trajectory and detector d
   Double_t nproj = y*sqrt( 1 + tan(azimuth)*tan(azimuth) ); //projection of trajectory to x-y plane
   Double_t denomsquared= y*tan(azimuth)*y*tan(azimuth) + y*y + nproj*nproj*tan(elevation)*tan(elevation)  ;
   
@@ -465,15 +629,16 @@ Double_t PDecay(Double_t Etau, Double_t y, Double_t elevation, Double_t azimuth)
 
   //cout<<"trajectory vector normalized x: "<<dNx<<" y: "<<dNy<<" z: "<<dNz<<" normalization: "<<dNormalize<<endl;
 
-  //crossproduct of trajectory vector and vector of where tau emerges. Gives the
-  //distance between the to perpendicular to the trajecotory vector
+  //crossproduct of the trajectory vector with the vector pointing to where the tau emerged from the ground. 
+  //The magnitude of the cross product gives the distance of closest approach of the tau to the detector as it travels along 
+  //its trajectory
   Double_t dx = y*dNz; 
   Double_t dy = 0;
   Double_t dz = y*dNx;
 
   Double_t d = sqrt(dx*dx+dy*dy+dz*dz); //shortest distance d between tau trajectory and detector
 
-  //add extra distance if trajectory passes plane in between telescope and
+  //add some extra distance if the tau passes plane in between telescope and
   //horizon
   //using dED term assumes we see shower in camera but lower edge of FoV is aligned with line of sight to the horizon
   Double_t dED = 0; //extra distance
@@ -529,6 +694,7 @@ Double_t PDecay(Double_t Etau, Double_t y, Double_t elevation, Double_t azimuth)
   //dd is first used as the distance to the start of the shower not hte tip of
   //the shower
   Double_t dd = dShwrLgth+5; //we need to at least have the shower develop. note we neglect the decay length here, which does not really matter. That is taken care of later.
+ 
   if(dd>dem)
      dd = dShwrLgth;
  
@@ -537,7 +703,7 @@ Double_t PDecay(Double_t Etau, Double_t y, Double_t elevation, Double_t azimuth)
   //move along trajectory and find spot where MaxCherenkovAngle condition is
   //fullfilled
   Double_t dDistanceToWhereTauStarts = sqrt(d*d+dd*dd);
-  fPE->FixParameter(0,dDistanceToWhereTauStarts); //Distance to where the tau gets out of the ground
+  fPE->FixParameter(0,dDistanceToWhereTauStarts); //Distance to where the tau starts shower
    //get new azimuth
    Double_t g = (dem-dd) * cos(elevation);
    Double_t az = 0;
@@ -575,7 +741,7 @@ Double_t PDecay(Double_t Etau, Double_t y, Double_t elevation, Double_t azimuth)
     dd -= dShwrLgth;
   else
     dd -= (dShwrLgth+5);
-
+  
   
   //maximum length of trajectory above horizon befor track leaves atmosphere (dST above ground)
   Double_t phi = elevation + asin( REarth/sqrt(REarth*REarth+(l-v)*(l-v)) );
@@ -606,7 +772,7 @@ Double_t PDecay(Double_t Etau, Double_t y, Double_t elevation, Double_t azimuth)
                                + sin(elevation)*sin(elevation)/tanFoV/tanFoV
                                - cos(elevation)*cos(elevation);
 
-  if(dTermInSquareRoot>0) //if it is negative the shower if contained in the FoV anywhere along the track
+  if(dTermInSquareRoot>0) //if it is negative the shower is contained in the FoV anywhere along the track
     {
         //maximum trajectory length before the tip of the shower is not contained in the camera anymore
        Double_t dMaxDisttoSatisfyFovReq = l / ( cos(elevation)*cos(azimuth) + sqrt( dTermInSquareRoot )) + dInFoV;
@@ -633,7 +799,7 @@ Double_t PDecay(Double_t Etau, Double_t y, Double_t elevation, Double_t azimuth)
   if(d90PctDecayLength+dShwrLgth<dMaxDist)
     dMaxDist = d90PctDecayLength+dShwrLgth;
 
-  //now lets check of the size of the shower is fullfilling the minimum length
+  //now lets check if the size of the shower is fullfilling the minimum length
   //requirement
 
   //calculating length of shower in the camera assuming the shower happens late
@@ -652,7 +818,7 @@ Double_t PDecay(Double_t Etau, Double_t y, Double_t elevation, Double_t azimuth)
   //cout<<"size of shower in degrees: "<<dLength<<" cos of angle:  "<<costheta<<endl;
 
 
-  if(dLength<dMinLength) //shower is not long enough in the camera
+  if(dLength<dMinLength) //shower image is too short
    return 0;
 
 
@@ -663,6 +829,7 @@ Double_t PDecay(Double_t Etau, Double_t y, Double_t elevation, Double_t azimuth)
   //below works for tau emerging beyond horizon and before horizon 
   Double_t ProbTauDecay = exp(-(dED-dInFoV)/DecayLength); //Tau has to to survive before it becomes visible to the detector
 
+  
   ProbTauDecay *= 1-exp(-(dMaxDist-dShwrLgth)/DecayLength); // then it has to decay before it is out of the FoV
 
   ProbTauDecay*=0.8;//only 80% of taus make a shower
@@ -677,7 +844,7 @@ return ProbTauDecay;
 void PlotEmergenceProbability()
 {
 
-  TH1D *hTau = new TH1D("hTauS","",50,7,12);
+  TH1D *hTau = new TH1D("hTauS","",70,4,11);
   //hTau->SetMaximum(1);
   hTau->GetXaxis()->SetTitle("energy [GeV]");
   hTau->GetYaxis()->SetTitle("F_tau/F_nu");
@@ -695,14 +862,14 @@ void PlotEmergenceProbability()
   TLegend *leg = new TLegend(0.7,0.4,0.89,0.88,"neutrino energy");
 
 
-  double Enulog = 11;
-  double Enuminlog = 7;
+  double Enulog = 6;
+  double Enuminlog = 4.9;
   double Enusteplog = 0.5;
   int s=0;
   while(Enulog>Enuminlog)
     {
+      //cout<<Enulog<<endl;
       double Enu = pow(10,Enulog);
-      Enulog-=Enusteplog;
       TGraph *grProb = new TGraph(); 
       grProb->SetMarkerStyle(20+s);
       TString title;
@@ -725,12 +892,13 @@ void PlotEmergenceProbability()
            {
 
                Double_t Etau = hTau->GetBinCenter(i+1); 
-               if(Etau<=0.8*Enu)
+               if(hTau->GetBinLowEdge(i+2)<=Enu)
                  {
-                    Double_t P = PEtau(targetthickness,Etau,Enu);
-                    //cout<<targetthickness<<" . "<<Etau<<"  "<<Enu<<" P "<<P<<endl;
-                    P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
+                    Double_t P = PEtau(targetthickness,Etau,Enu,hTau);
+                    double P1 = PEtauNoEnergyLoss(targetthickness,Etau,Enu,hTau) ;
 
+                  P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
+                  P1 *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
                     hTau->Fill(Etau,P); 
                     hTau->SetBinError(i,0);
                     dSumProb+=P;
@@ -742,6 +910,7 @@ void PlotEmergenceProbability()
          p++;
          d+=dstep;            
         }    
+      Enulog-=Enusteplog;
      }
   TCanvas *cProbOfEmergence = new TCanvas("cProbOfEmergence","Probability of emergence",750,500);
   cProbOfEmergence->Draw();
@@ -756,13 +925,14 @@ void PlotEmergenceProbability()
   mg->GetYaxis()->SetTitleOffset(1.0);
   mg->GetYaxis()->SetTitleSize(0.045);
   mg->GetYaxis()->SetLabelSize(0.045);
-  mg->GetYaxis()->SetRangeUser(1e-4,1);
- // mg->GetXaxis()->SetRangeUser(1,5e3);
+  mg->GetYaxis()->SetRangeUser(1e-8,1e-4);
+  mg->GetXaxis()->SetRangeUser(1,5e4);
   leg->Draw();
   //TF1 *fdeg=new TF1("fdeg","90-180/3.1415*TMath::ASin(0.5*x/6371)",0,1e4);
   cout<<mg->GetXaxis()->GetXmin()<<endl;
   cout<<180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmin()/6371)<<"  "<<180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmax()/6371)<<endl;
   TF1 *fdeg=new TF1("fdeg","x",180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmin()/6371),180/3.1415*TMath::ASin(0.5*mg->GetXaxis()->GetXmax()/6371));
+  fdeg->Eval(0);
   TGaxis *degaxis = new TGaxis(mg->GetXaxis()->GetXmin(),1,mg->GetXaxis()->GetXmax(),1,"fdeg",510,"-G");
   degaxis->SetTitle("elevation angle [degrees]");
   degaxis->SetTitleFont(42);
@@ -770,49 +940,172 @@ void PlotEmergenceProbability()
   degaxis->Draw();
 }
 
-void GetTauDistribution(TH1D *hTauSpec, Double_t d, Double_t expMin = 9.0, Double_t expMax = 9.5)
+
+void GetTauDistribution(TH1D *hTauSpec, Double_t d, Double_t Enumin = 1e9, Double_t Enumax = 3.16e9)
 {
    hTauSpec->Reset(); //get the energy spectrum of taus coming out of the Earth, starting with nus in the range expmin expMax
-   Double_t Enumin = pow(10,expMin);
-   Double_t Enumax = pow(10,expMax);
-   Double_t DeltaEnu = (Enumax - Enumin)/20;
+   //int nEnuSteps = 20;
+   //Double_t DeltaEnu = (Enumax - Enumin)/nEnuSteps;
+   Double_t DeltaEnu = 0.1; //logscale
+   int nEnuSteps = (0.0001+log10(Enumax) - log10(Enumin))/DeltaEnu; //the 0.0001 is due to small uncertainties making sure we get the right number of steps
    Double_t Normalization = (nuIndex-1)/(pow(Enumin,1-nuIndex)-pow(Enumax,1-nuIndex)); 
-   for(int i=0;i<hTauSpec->GetNbinsX();i++)
+   vector<double> Enu;
+   vector<double> EnuWeight;
+   for(int i=0;i<nEnuSteps;i++)
+      {
+        //Enu.push_back(Enumin+i*DeltaEnu+0.5*DeltaEnu);
+        //NO Enu.push_back(pow(10,(log10(Enumin+i*DeltaEnu)+log10(Enumin+(i+1)*DeltaEnu))*0.5));
+        Enu.push_back(pow(10,log10(Enumin)+i*DeltaEnu+DeltaEnu*0.5));
+        //EnuWeight.push_back(pow(Enumin+i*DeltaEnu+0.5*DeltaEnu,-nuIndex)*Normalization*DeltaEnu);
+        //NO EnuWeight.push_back(pow(Enu[Enu.size()-1],-nuIndex)*Normalization*DeltaEnu);
+        EnuWeight.push_back(pow(Enu[Enu.size()-1],-nuIndex)*Normalization*
+                       (pow(10,log10(Enumin)+(i+1)*DeltaEnu)-pow(10,log10(Enumin)+i*DeltaEnu)));
+      }
+
+   for(int i=1;i<=hTauSpec->GetNbinsX();i++)
        {
 
-          Double_t Etau = hTauSpec->GetBinCenter(i+1); 
+          Double_t Etau = hTauSpec->GetBinCenter(i); 
 
          //loop over all Enu in this energy bin to calculate the sensitivity
-          Double_t Enu = Enumin;
           if(bMonoNu) //if we want to simulate only monoenergetic neutrinos (only good for acceptance calculations
             {
-               if(Etau<=0.8*Enu) //0.8 because I need to account for part of the energy being transferred to the also produced neutrinos
+               //NO removed because that is transferred into PEtau 
+               //if(Etau<=0.8*Enu) //0.8 because I need to account for part of the energy being transferred to the also produced neutrinos
                  {
-                    Enu = pow(10,(expMin+expMax)*0.5);
-                    Double_t P = PEtau(d,Etau,Enu);
+                    Double_t Enu = pow(10,(log10(Enumin)+log10(Enumax))*0.5);
+                    Double_t P = PEtau(d,Etau,Enu,hTauSpec);
+                    hTauSpec->Fill(Etau,P);
+                 }
+            }
+          else
+            {
+              //while(Enu<Enumax)//loop over nu energy bin
+              for(int n = 0; n<nEnuSteps;n++)
+                {
+                  //NO removed because that is transferred into PEtau
+                  //if(Etau<=0.8*Enu) //0.8 because I need to account for part of the energy being transferred to the also produced neutrinos
+                    {
+                      Double_t P = 0;
+                      //if(Enu==Enumin)  //mod
+                      P = PEtau(d,Etau,Enu[n],hTauSpec);
+                      //if(Enu==Enumin) //mod
+                      //cout<<P<<"  "<<d<<"  "<<Etau<<" "<<Enu[n]<<"  "<<EnuWeight[n]<<endl; //mod
+                      //P *= DeltaEnu/(Enumax-Enumin);
+                      P *= EnuWeight[n];
+
+                      //do not know how the below is calculated
+                      //P *= ( pow(Enu,1-nuIndex) - pow(Enu+DeltaEnu,1-nuIndex) )
+                      // / ( pow(Enumin,1-nuIndex) - pow(Enumax,1-nuIndex) );//multiplying in the with
+                      hTauSpec->SetBinContent(i,hTauSpec->GetBinContent(i)+P);
+                      //hTauSpec->Fill(Etau,P);
+                    }
+                //Enu += DeltaEnu;
+               }
+           }
+      }//got the energy spectrum of the taus for this azimuth and elevation
+
+ /*
+               for(int i=0;i<hTauSpec->GetNbinsX();i++)
+                  {
+cout<<i+1<<"  "<<hTauSpec->GetBinCenter(i+1)  <<" taus cont: "<<hTauSpec->GetBinContent(i+1)<<endl;
+}
+*/
+      //finding lowest and highest bin that is non-zero
+      //bin with maximum content
+      Int_t iBinMax = hTauSpec->GetMaximumBin();
+      Double_t dContInMax = hTauSpec->GetBinContent(iBinMax);
+      //   cout<<"iBinMax: "<<iBinMax<<" maxcontent: "<<dContInMax<<endl;
+
+      //Double_t dHighE = hTauSpec->GetBinLowEdge(iBinMax+1);
+      //finding lowest bin
+      Int_t iBinMin = iBinMax;
+      while(hTauSpec->GetBinContent(iBinMin)>1e-4*dContInMax)
+        {
+           iBinMin--;
+        }
+      // cout<<"iBinMin: "<<iBinMin<<endl;
+
+     //finding highest bin
+      while(hTauSpec->GetBinContent(iBinMax+1)>0)
+         iBinMax++;
+
+      //cout<<"iBinMax: "<<iBinMax<<endl;
+
+
+       //Double_t dLowE = hTauSpec->GetBinLowEdge(iBinMin);
+       //Double_t dDeltaE = dHighE-dLowE;
+
+       for(int i=1;i<hTauSpec->GetNbinsX();i++) //weight each bin with energy scale need to do that because of logarithmic energy scale
+          {
+            Double_t dContent = hTauSpec->GetBinContent(i);
+            dContent *= (hTauSpec->GetBinLowEdge(i+1)-hTauSpec->GetBinLowEdge(i));
+            if(i<iBinMin || i>iBinMax)
+                 dContent = 0;
+            hTauSpec->SetBinContent(i,dContent);
+            hTauSpec->SetBinError(i,0);
+          }
+}
+void GetTauDistributionNEL(TH1D *hTauSpec, Double_t d, Double_t Enumin = 1e9, Double_t Enumax = 3.16e9)
+{
+   hTauSpec->Reset(); //get the energy spectrum of taus coming out of the Earth, starting with nus in the range expmin expMax
+   //int nEnuSteps = 20;
+   //Double_t DeltaEnu = (Enumax - Enumin)/nEnuSteps;
+   Double_t DeltaEnu = 0.1; //logscale
+   int nEnuSteps = (0.0001+log10(Enumax) - log10(Enumin))/DeltaEnu; //the 0.0001 is due to small uncertainties making sure we get the right number of steps
+   Double_t Normalization = (nuIndex-1)/(pow(Enumin,1-nuIndex)-pow(Enumax,1-nuIndex));
+   vector<double> Enu;
+   vector<double> EnuWeight;
+   for(int i=0;i<nEnuSteps;i++)
+      {
+        //Enu.push_back(Enumin+i*DeltaEnu+0.5*DeltaEnu);
+        //NO Enu.push_back(pow(10,(log10(Enumin+i*DeltaEnu)+log10(Enumin+(i+1)*DeltaEnu))*0.5));
+        Enu.push_back(pow(10,log10(Enumin)+i*DeltaEnu+DeltaEnu*0.5));
+        //EnuWeight.push_back(pow(Enumin+i*DeltaEnu+0.5*DeltaEnu,-nuIndex)*Normalization*DeltaEnu);
+        //NO EnuWeight.push_back(pow(Enu[Enu.size()-1],-nuIndex)*Normalization*DeltaEnu);
+        EnuWeight.push_back(pow(Enu[Enu.size()-1],-nuIndex)*Normalization*
+                       (pow(10,log10(Enumin)+(i+1)*DeltaEnu)-pow(10,log10(Enumin)+i*DeltaEnu)));
+      }
+
+   for(int i=1;i<=hTauSpec->GetNbinsX();i++)
+       {
+
+          Double_t Etau = hTauSpec->GetBinCenter(i);
+
+         //loop over all Enu in this energy bin to calculate the sensitivity
+          if(bMonoNu) //if we want to simulate only monoenergetic neutrinos (only good for acceptance calculations
+            {
+               //NO removed because that is transferred into PEtau
+               //if(Etau<=0.8*Enu) //0.8 because I need to account for part of the energy being transferred to the also produced neutrinos
+                 {
+                    Double_t Enu = pow(10,(log10(Enumin)+log10(Enumax))*0.5);
+                    Double_t P = PEtauNoEnergyLoss(d,Etau,Enu,hTauSpec);
                     hTauSpec->Fill(Etau,P);
                  } 
             }
           else
             {
-              while(Enu<Enumax)//loop over nu energy bin
+              //while(Enu<Enumax)//loop over nu energy bin
+              for(int n = 0; n<nEnuSteps;n++)
                 {
-                  if(Etau<=0.8*Enu) //0.8 because I need to account for part of the energy being transferred to the also produced neutrinos
+                  //NO removed because that is transferred into PEtau 
+                  //if(Etau<=0.8*Enu) //0.8 because I need to account for part of the energy being transferred to the also produced neutrinos
                     {
                       Double_t P = 0;
                       //if(Enu==Enumin)  //mod
-                      P = PEtau(d,Etau,Enu+0.5*DeltaEnu);
+                      P = PEtauNoEnergyLoss(d,Etau,Enu[n],hTauSpec);
                       //if(Enu==Enumin) //mod
-                      //cout<<P<<"  "<<d<<"  "<<Etau<<" "<<Enu+0.5*DeltaEnu<<endl<<endl<<endl; //mod
+                      //cout<<P<<"  "<<d<<"  "<<Etau<<" "<<Enu[n]<<"  "<<EnuWeight[n]<<endl; //mod
                       //P *= DeltaEnu/(Enumax-Enumin); 
-                      P *= DeltaEnu*pow(Enu,-nuIndex)*Normalization;
+                      P *= EnuWeight[n];
 
                       //do not know how the below is calculated
                       //P *= ( pow(Enu,1-nuIndex) - pow(Enu+DeltaEnu,1-nuIndex) ) 
                       // / ( pow(Enumin,1-nuIndex) - pow(Enumax,1-nuIndex) );//multiplying in the with
-                      hTauSpec->Fill(Etau,P); 
+                      hTauSpec->SetBinContent(i,hTauSpec->GetBinContent(i)+P); 
+                      //hTauSpec->Fill(Etau,P); 
                     }
-                 Enu += DeltaEnu;  
+                //Enu += DeltaEnu;  
                }
            }    
       }//got the energy spectrum of the taus for this azimuth and elevation
@@ -857,9 +1150,7 @@ cout<<i+1<<"  "<<hTauSpec->GetBinCenter(i+1)  <<" taus cont: "<<hTauSpec->GetBin
             hTauSpec->SetBinContent(i,dContent);
             hTauSpec->SetBinError(i,0);
           }
-
 }
-
 
 //Calculates the acceptance by looping over distance, azimuth and elevation for
 //a given energy bin
@@ -868,6 +1159,26 @@ cout<<i+1<<"  "<<hTauSpec->GetBinCenter(i+1)  <<" taus cont: "<<hTauSpec->GetBin
 //loop
 Double_t CalculateAcceptance(Double_t dMinEnu, Double_t dMaxEnu,TGraph *grDiffAcceptance,TH1D *hTau)
 {
+
+   dMinEnu = pow(10,dMinEnu);
+   dMaxEnu = pow(10,dMaxEnu);
+
+   //the hTau passed to the function is ignored. Create a new one below
+   //hTau = new TH1D("hTauNew","",dMaxEnu/(dMinEnu/10.),dMinEnu/10.,dMaxEnu);
+/*
+//make logarithmic axis
+TAxis *axis = hTauNew->GetXaxis();
+int bins = axis->GetNbins();
+Axis_t from = axis->GetXmin();
+Axis_t to = axis->GetXmax();
+Axis_t width = (to - from) / bins;
+Axis_t *new_bins = new Axis_t[bins + 1];
+for (int i = 0; i <= bins; i++) {
+     new_bins[i] = TMath::Power(10, from + i * width);
+}
+axis->Set(bins, new_bins);
+axis->Delete();
+*/
     //area of cell
     Double_t dConversion=yDelta*2*pi; //multiply area of cell taking into account that we have a 360 degree FoV
     dConversion*=1e10; //from km2 to cm2
@@ -878,9 +1189,7 @@ Double_t CalculateAcceptance(Double_t dMinEnu, Double_t dMaxEnu,TGraph *grDiffAc
     //without the observing time
     //dConversion*=3*365*24*3600*0.20; //exposure time 3 years in seconds with 20% duty cycle
 
-   
     dConversion*=2; //because we only calculate for azimuth angles 0 to azimuth max. There are also negative azimuth values due to symmetry of the problem 
-
 
     Double_t dIntegratedAcceptance=0;
     Int_t p = 0;
@@ -911,6 +1220,7 @@ Double_t CalculateAcceptance(Double_t dMinEnu, Double_t dMaxEnu,TGraph *grDiffAc
 
                  //cout<<dEarth<<"  "<<dMinEnu<<"  "<<dMaxEnu<<endl; 
                  GetTauDistribution(hTau,dEarth,dMinEnu,dMaxEnu);                
+                 //cout<<"done GetTau"<<endl;
 
                Double_t dDeltaAcceptance=0;
 
@@ -940,14 +1250,15 @@ Double_t CalculateAcceptance(Double_t dMinEnu, Double_t dMaxEnu,TGraph *grDiffAc
                           dP = dPFluorescence;
                         else
                           dP = dPCherenkov;
-                        dDeltaAcceptance+=hTau->GetBinContent(i+1)*dP;
+                        dDeltaAcceptance+=hTau->GetBinContent(i+1)*dP ;
                         //dDeltaAcceptance+=hTau->GetBinContent(i+1); //use above
-                        hTriggeredAzimuthAngles->Fill(azimuth,hTau->GetBinContent(i+1)*dP*dWeightForTriggeredAzimuth);
+                        if(!bMonoNu)
+                          hTriggeredAzimuthAngles->Fill(azimuth,hTau->GetBinContent(i+1)*dP*dWeightForTriggeredAzimuth);
                        }
                      //if(hTau->GetBinContent(i+1)*dP>0 )
                      //cout<<hTau->GetBinCenter(i+1)<<"  "<<hTau->GetBinContent(i+1)<<" y:  "<<y<<"  el: "<<elevation<<" az: "<<azimuth<<" dp: "<<dP<<" dDeltaAccept: "<<dDeltaAcceptance<<" prod: "<<hTau->GetBinContent(i+1)*dP<<endl;
                   }
-               if(dDeltaAcceptance<1e-20 && y>50) //won't get any more acceptance. The >60 is to make sure we do not miss fluorescence events whic can be seen from the back
+               if(dDeltaAcceptance<1e-10 && y>50) //won't get any more acceptance. The >60 is to make sure we do not miss fluorescence events whic can be seen from the back
                    break;
 
                dAcceptance+=dDeltaAcceptance*sin(elevation/180.*pi); //projection of area cell to trajectory
@@ -968,16 +1279,144 @@ Double_t CalculateAcceptance(Double_t dMinEnu, Double_t dMaxEnu,TGraph *grDiffAc
     
     grDiffAcceptance->SetPoint(p,y,dAcceptance*dConversion); 
     p++;
-    cout<<"distance: "<<y<<" differ. acceptance "<<(dAcceptance*dConversion)<<" integr. acceptance.: "<<(dIntegratedAcceptance*dConversion)<<endl; 
-    cout<<dAcceptance<<"  "<<dConversion<<endl;
+//    cout<<"distance: "<<y<<" differ. acceptance "<<(dAcceptance*dConversion)<<" integr. acceptance.: "<<(dIntegratedAcceptance*dConversion)<<endl;
+//    cout<<dAcceptance<<"  "<<dConversion<<endl;
     y+=yDelta;
     if(dAcceptance<1e-10 && y>50) //no sense to increase in distance if we can't see any showers now
        break;
   }//end looping over distances
-
 return (dIntegratedAcceptance*dConversion);
 }
+Double_t CalculateAcceptanceNEL(Double_t dMinEnu, Double_t dMaxEnu,TGraph *grDiffAcceptance,TH1D *hTau)
+{
 
+   dMinEnu = pow(10,dMinEnu);
+   dMaxEnu = pow(10,dMaxEnu);
+
+   //the hTau passed to the function is ignored. Create a new one below
+   //hTau = new TH1D("hTauNew","",dMaxEnu/(dMinEnu/10.),dMinEnu/10.,dMaxEnu);
+/*
+//make logarithmic axis
+TAxis *axis = hTauNew->GetXaxis();
+int bins = axis->GetNbins();
+Axis_t from = axis->GetXmin();
+Axis_t to = axis->GetXmax();
+Axis_t width = (to - from) / bins;
+Axis_t *new_bins = new Axis_t[bins + 1];
+for (int i = 0; i <= bins; i++) {
+     new_bins[i] = TMath::Power(10, from + i * width);
+}
+axis->Set(bins, new_bins);
+axis->Delete();
+*/
+    //area of cell
+    Double_t dConversion=yDelta*2*pi; //multiply area of cell taking into account that we have a 360 degree FoV
+    dConversion*=1e10; //from km2 to cm2
+    //solid angle
+    dConversion*=DeltaAngleAz/180.*pi*DeltaAngle/180.*pi; //multiply area of solidangle cell
+
+    //time Do that in the sensitivity calculation. Acceptance is calculated
+    //without the observing time
+    //dConversion*=3*365*24*3600*0.20; //exposure time 3 years in seconds with 20% duty cycle
+
+    dConversion*=2; //because we only calculate for azimuth angles 0 to azimuth max. There are also negative azimuth values due to symmetry of the problem
+
+    Double_t dIntegratedAcceptance=0;
+    Int_t p = 0;
+    Double_t y = yMin; //y distance from telescope where tau comes out of the ground;
+    while(y<yMax) //loop over distance to telescope
+     {
+       //cout<<"Distance from Detector: "<<y<<endl;
+       //calculate for given elevation the length of the trajectory through earth.
+       Double_t dAcceptance=0.0;
+
+       Double_t MaxAzimuth = dMaxCherenkovAzimuthAngle;
+       if( bFluorescence || (bCombined && y<dMaxFluorescenceDistance) ) // so we can make full use of fluoresence events
+         MaxAzimuth = 180;
+
+       Double_t elevation=DeltaAngle*0.5;
+       while(elevation<MaxElevation) //loop over elevation
+         {
+            Double_t dWeightForTriggeredAzimuth = sin(elevation/180.*pi)*y;
+            Double_t azimuth = DeltaAngleAz*0.5;
+            while(azimuth<MaxAzimuth) // loop over azimuth
+              {
+
+                 if(azimuth>MaxAzimuth && y>dMaxFluorescenceDistance)
+                  cout<<" Azimuth:" <<azimuth<<" should not be here "<<endl;
+
+                 Double_t dEarth = DistanceThroughEarth(y,elevation,azimuth);
+                 //cout<<"   length of trajectory in Earth: "<<dEarth<<" km"<<endl;
+
+                 //cout<<dEarth<<"  "<<dMinEnu<<"  "<<dMaxEnu<<endl;
+                 GetTauDistributionNEL(hTau,dEarth,dMinEnu,dMaxEnu);
+                 //cout<<"done GetTau"<<endl;
+
+               Double_t dDeltaAcceptance=0;
+
+               //Calculate probability that taus with E convert before they are 150 km away from detector when they make it out of the earth.
+               //150km is for an angle of 5 degrees assuming 10 degree opening angle. If the angle is free the distance of closest approach depends on
+               // where the tau comes out of the earth and under what angle (vertical and horizontal.
+               //That is probably dependend on the initial nu energy
+               Double_t dP = 0;
+                //     if(elevation>0.5 && elevation<1 && azimuth>9 && azimuth<9.2)
+               for(int i=0;i<hTau->GetNbinsX();i++)
+                  {
+//cout<<dMinEnu<<"  "<<dMaxEnu<<endl;
+//cout<<"taus cont: "<<hTau->GetBinContent(i+1)<<endl;
+                     if(hTau->GetBinContent(i+1)>0)
+                      {
+                        Double_t dPFluorescence = 0.0;
+                        Double_t dPCherenkov = 0.0;
+                         //cout<<bFluorescence<<" "<<bCombined<<"  "<<y<<"<"<<dMaxFluorescenceDistance<<endl;
+                        if( bFluorescence || (bCombined && y<dMaxFluorescenceDistance) )
+                           dPFluorescence = PDecayFluorescence(hTau->GetBinCenter(i+1),y,elevation,azimuth);
+                        if( (!bFluorescence || bCombined) && azimuth<dMaxCherenkovAzimuthAngle  )
+                            dPCherenkov = PDecay(hTau->GetBinCenter(i+1),y,elevation,azimuth);
+
+                        if(bCombined)
+                         dP = dPFluorescence > dPCherenkov ? dPFluorescence : dPCherenkov;
+                        else if(bFluorescence)
+                          dP = dPFluorescence;
+                        else
+                          dP = dPCherenkov;
+                        dDeltaAcceptance+=hTau->GetBinContent(i+1)*dP ;
+                        //dDeltaAcceptance+=hTau->GetBinContent(i+1); //use above
+                        if(!bMonoNu)
+                          hTriggeredAzimuthAngles->Fill(azimuth,hTau->GetBinContent(i+1)*dP*dWeightForTriggeredAzimuth);
+                       }
+                     //if(hTau->GetBinContent(i+1)*dP>0 )
+                     //cout<<hTau->GetBinCenter(i+1)<<"  "<<hTau->GetBinContent(i+1)<<" y:  "<<y<<"  el: "<<elevation<<" az: "<<azimuth<<" dp: "<<dP<<" dDeltaAccept: "<<dDeltaAcceptance<<" prod: "<<hTau->GetBinContent(i+1)*dP<<endl;
+                  }
+               if(dDeltaAcceptance<1e-10 && y>50) //won't get any more acceptance. The >60 is to make sure we do not miss fluorescence events whic can be seen from the back
+                   break;
+
+               dAcceptance+=dDeltaAcceptance*sin(elevation/180.*pi); //projection of area cell to trajectory
+               //   cout<<"distance "<<y<<" prob"<<dDeltaAcceptance<<" elevation  "<<elevation<<endl;
+               azimuth+=DeltaAngleAz;
+
+               //Add absorption in the atmosphere between shower and observer
+               //Go over target area and calculate acceptance angle for each dA. Integrate over energy spectrum of taus coming out of the earth at that point. multiplied with detection efficiency(absorption).
+             }//finished looping over all azimuth angles
+               elevation+=DeltaAngle;
+             //cout<<azimuth<<"  "<<dAcceptance<<endl;
+           //multiply with dOmega  DeltaAngle*DeltaAngle
+        }//finished looping over all elevation angles
+    //dAcceptance*=yDelta*DeltaAngle/180*pi*y; //multiply area of cell
+    //dAcceptance*=DeltaAngle/180*pi*DeltaAngle/180*pi; //multiply area of solidangle cell
+    dAcceptance*=y; //multiply with area of cell (note that the yDelta*DeltaAngle/180*pi is included in dConversion
+    dIntegratedAcceptance+=dAcceptance;
+
+    grDiffAcceptance->SetPoint(p,y,dAcceptance*dConversion);
+    p++;
+//    cout<<"distance: "<<y<<" differ. acceptance "<<(dAcceptance*dConversion)<<" integr. acceptance.: "<<(dIntegratedAcceptance*dConversion)<<endl;
+//    cout<<dAcceptance<<"  "<<dConversion<<endl;
+    y+=yDelta;
+    if(dAcceptance<1e-10 && y>50) //no sense to increase in distance if we can't see any showers now
+       break;
+  }//end looping over distances
+return (dIntegratedAcceptance*dConversion);
+}
 void CalculateAcceptanceVsLowerFoV(TH1D *hTau)
 {
 
@@ -1187,14 +1626,15 @@ void CalculateAcceptanceVsEnergy(TH1D *hTau)
 
   bCombined = kFALSE;
 
-  MaxElevation = 10; //elevation angle (determines path through Earth; 
+  MaxElevation = 20; //was 10 //elevation angle (determines path through Earth;
   DeltaAngle = 0.05; //steps in azimuth and elevation 
   yMin = 0;
   yDelta = 5; 
 
   iConfig = 2; //telescope altitude
-  dFoVBelow = asin(REarth/(REarth+DetectorAltitude[iConfig]));
-  tanFoV = tan(5./180.*pi);
+//  dFoVBelow = asin(REarth/(REarth+DetectorAltitude[iConfig]));
+  dFoVBelow = 89./180.*pi ;
+  tanFoV = tan(89./180.*pi); //was 5.
   dMinLength = 0.3; //mimnimum length a shower has to have in the camera, in degrees. This is a conservative estimate because it assumes that the shower starts at a distance l from the detector, which is not necessarily tru for showers with shallow elevation angles.
 
   iMirrorSize = 2;
@@ -1202,10 +1642,7 @@ void CalculateAcceptanceVsEnergy(TH1D *hTau)
 
   Double_t dLogEnergyStep = 0.2;
   Double_t dHalfEnergyBinWidth =1/2.; //in log
-  Double_t logEmin = 10.0; //was 7
-
-
-
+  Double_t logEmin = 9; //was 7
 
   TMultiGraph *mgDiffAcceptance = new TMultiGraph();
   TMultiGraph *mgAcceptance = new TMultiGraph();
@@ -1237,7 +1674,7 @@ void CalculateAcceptanceVsEnergy(TH1D *hTau)
        dMaxEnu=logEmin+f*dLogEnergyStep+dHalfEnergyBinWidth;
        Double_t dPreFactor = pow(10,dMaxEnu+dMinEnu) / (pow(10,dMaxEnu)-pow(10,dMinEnu));
        dPreFactor *= 3;//three neutrino flavours
-       
+
 
        TGraph *grDiffAcceptance = new TGraph();
        if(bFluorescence)
@@ -1583,6 +2020,56 @@ void CalculateAcceptanceVsThreshold(TH1D *hTau)
 // Calculate Integral Sensitiivty
 //
 //
+
+void CalculateIntegralSensitivity0(TH1D *hTau){
+	const double gam = 2.1 ;
+	const double t = 5 * 365*24*60*60;
+	const double Eo = pow(10,8) ;
+	double dE_log = 0.2 ;
+	double Ei = 6 ;
+	double Eh = 10 ;
+	TCanvas *cIntSensitivity = new TCanvas("cIntSensitivity","Integral Sensitivity",750,500);
+    TGraph *grSensitivity = new TGraph();
+    TGraph *grDiffAcceptance = new TGraph();
+	cIntSensitivity->Draw() ;
+	cIntSensitivity->SetLogy() ;
+	cIntSensitivity->SetLogx() ;
+	double dIntegr = 0 ;
+	while(Ei<Eh ){
+		double E = pow(10, Ei) ;
+		double dE = pow(10, Ei+dE_log) - E ;
+		double accept = CalculateAcceptance(Ei, Ei+dE_log, grDiffAcceptance,hTau) ;
+		dIntegr += accept * pow(E, -gam) * dE ;
+		Ei += dE_log ;
+	}
+	double Fo = 1 / (t * pow(Eo, gam) *  dIntegr) ;
+	Ei = 6 ;
+	int n = 0 ;
+	while(Ei<Eh ){
+		double E = pow(10, Ei) ;
+		double F = Fo * pow(E/Eo, -gam );
+        grSensitivity->SetPoint(n, E, F * E * E);
+        n++ ;
+		Ei += dE_log ;
+        grSensitivity->Draw("alp");
+        cIntSensitivity->Modified();
+        cIntSensitivity->Update();
+	}
+
+	grSensitivity->SetLineWidth(3);
+	grSensitivity->SetLineColor(kBlue+3);
+	grSensitivity->GetXaxis()->SetTitle("energy [GeV]");
+	grSensitivity->GetYaxis()->SetTitle("E^{2} dN/dE [ GeV cm^{-2} s^{-1} sr^{-1} ]");
+	grSensitivity->GetYaxis()->SetTitleSize(0.04);
+	grSensitivity->GetYaxis()->SetLabelSize(0.04);
+	grSensitivity->GetXaxis()->SetTitleSize(0.04);
+	grSensitivity->GetXaxis()->SetLabelSize(0.04);
+	TString Filename;
+	Filename.Form("IntegrSensitivity/IntegralSensitivity_Index_%0.1f.root",gam);
+	cIntSensitivity->SaveAs(Filename.Data());
+
+}
+
 void CalculateIntegralSensitivity(TH1D *hTau)
 {
 
@@ -1666,33 +2153,38 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
 
     Double_t dLogEnergyStep = 0.2; //0.2
     Double_t dHalfEnergyBinWidth =1/2.; //in log was 1/2
-    Double_t logEmin = 7; //7
-    Double_t logEmax = 11; //11
+    Double_t logEmin = 5; //7
+    Double_t logEmax = 6; //11
 
     bCombined = kTRUE;
     yMin = 5; //5
     yMax = 500; //500
     yDelta = 5; //5
-    MaxElevation = 10; //elevation angle (determines path through Earth;
+    MaxElevation = 20; //elevation angle (determines path through Earth;
     DeltaAngle = 0.05; //steps in azimuth and elevation 
 
     iConfig = 2; //telescope altitude
-  
-    //exposure
-    Double_t dExposure=3*365*24*3600*0.20; //exposure time 3 years in seconds with 20% duty cycle
 
-    Double_t dFoV = 2;  //test 0, 1, 2, 10
-    tanFoV = tan(dFoV/180.*pi);
+    //exposure
+    Double_t dExposure=10*365*24*3600*0.20; //exposure time 10 years in seconds with 20% duty cycle
+
+    Double_t dFoV = 89 ;  //test 0, 1, 2, 10
+    tanFoV = tan(dFoV/180.*pi) ;
     //dFoVBelow = asin(REarth/(REarth+DetectorAltitude[iConfig]));
-    dFoVBelow =  3/180.*pi; 
+    dFoVBelow =  89/180.*pi ;
     iMirrorSize = 2;
     dMinimumNumberPhotoelectrons = dThreshold[iMirrorSize]/dMirrorA[iMirrorSize]; 
 
     dMinLength = 0.3; //mimnimum length a shower has to have in the camera, in degrees. This is a conservative estimate because it assumes that the shower starts at a distance l from the detector, which is not necessarily tru for showers with shallow elevation angles.
     TGraph *grDiffAcceptance = new TGraph();
 
-    TGraph *grSensitivity = new TGraph();
+    TGraph *grSensitivity = new TGraph() ;
+    grSensitivity->SetLineWidth(3) ;
+    grSensitivity->SetLineColor(kBlue+3) ;
 
+    TGraph *grSensitivityNuCommunity = new TGraph();
+    grSensitivityNuCommunity->SetLineWidth(3);
+    grSensitivityNuCommunity->SetLineColor(kRed+3);
 
     TCanvas *cDiffSensitivity = new TCanvas("cDiffSensitivity","Differential Sensitivity",750,500);
     cDiffSensitivity->Draw();
@@ -1700,41 +2192,61 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
     cDiffSensitivity->SetLogx();
 
     TGraph *grAcceptance = new TGraph();
+    grAcceptance->SetLineWidth(3);
+    grAcceptance->SetLineColor(kBlue+3);
+
+    TGraph *grAcceptanceMonoEnergy = new TGraph();
+    grAcceptanceMonoEnergy->SetLineWidth(3);
+    grAcceptanceMonoEnergy->SetLineColor(kRed+3);
+
     TCanvas *cAcceptance = new TCanvas("cAcceptance","Acceptance",750,500);
     cAcceptance->Draw();
     cAcceptance->SetLogy();
     cAcceptance->SetLogx();
-  
+
     TCanvas *cTriggeredAzimuthAngles = new TCanvas("cTriggeredAzimuthAngles","Triggered Azimuth Angles",750,500);
     hTriggeredAzimuthAngles->Draw("HIST");
-
-  
-
 
     //Move in steps from lowest to highes energy
     Double_t dLogE = logEmin;
     Int_t n=0;
     while(dLogE<=logEmax)
        {
-          Double_t dAcceptance = CalculateAcceptance(dLogE-dHalfEnergyBinWidth,dLogE+dHalfEnergyBinWidth,grDiffAcceptance,hTau);
-    
-
-
+          bMonoNu = kFALSE; //calculate the acceptance averaged over Enu bin
+          Double_t dAcceptance = CalculateAcceptance(dLogE-dHalfEnergyBinWidth,dLogE+dHalfEnergyBinWidth,grDiffAcceptance,hTau) ;
+          Double_t dAcceptanceNEL = CalculateAcceptanceNEL(dLogE-dHalfEnergyBinWidth,dLogE+dHalfEnergyBinWidth,grDiffAcceptance,hTau) ;
           if(dAcceptance>1)
            {
-              //Double_t dEIndexed = pow(10,-dLogE*nuIndex);
+              grAcceptance->SetPoint(n,pow(10,dLogE),dAcceptance) ;
 
-              Double_t dnuFnu = 3 * pow(10,dLogE*2) / dAcceptance / dExposure / (pow(10,dLogE+dHalfEnergyBinWidth)- pow(10,dLogE-dHalfEnergyBinWidth));
-              cout<<"Energy "<<dLogE-dHalfEnergyBinWidth<<" to "<<dLogE+dHalfEnergyBinWidth<<" acceptance:  "<<dAcceptance<<" nuFnu: "<<dnuFnu<<" for power law with index -"<<nuIndex<<endl;
-              grSensitivity->SetPoint(n,pow(10,dLogE),dnuFnu);
-              cDiffSensitivity->cd();
-              grSensitivity->Draw("alp");
+              Double_t dnuFnu = 3 * 2.44 * pow(10,dLogE*2) / dAcceptance / dExposure / (pow(10,dLogE+dHalfEnergyBinWidth)- pow(10,dLogE-dHalfEnergyBinWidth));
+              Double_t dnuFnuNEL = 3 * 2.44 * pow(10,dLogE*2) / dAcceptanceNEL / dExposure / (pow(10,dLogE+dHalfEnergyBinWidth)- pow(10,dLogE-dHalfEnergyBinWidth));
+//              cout<<"Energy "<<dLogE-dHalfEnergyBinWidth<<" to "<<dLogE+dHalfEnergyBinWidth<<" acceptance:  "<<dAcceptance<<" nuFnu: "<<dnuFnu<<" for power law with index -"<<nuIndex<<endl;
+              cout << "dnuFnu:" << dnuFnu << endl;
+              cout << "dnuFnuNEL: "<< dnuFnuNEL << endl;
+              grSensitivity->SetPoint(n,pow(10,dLogE),dnuFnu) ;
+              cDiffSensitivity->cd() ;
+              grSensitivity->Draw("alp") ;
+
+              //Calculate the Sensitivity as done by the Nu Community
+              bMonoNu = kTRUE; //calculate the acceptance at Enu bin center
+              dAcceptance = CalculateAcceptance(dLogE-dHalfEnergyBinWidth,dLogE+dHalfEnergyBinWidth,grDiffAcceptance,hTau) ;
+              dAcceptanceNEL = CalculateAcceptanceNEL(dLogE-dHalfEnergyBinWidth,dLogE+dHalfEnergyBinWidth,grDiffAcceptance,hTau) ;
+              grAcceptanceMonoEnergy->SetPoint(n,pow(10,dLogE),dAcceptance) ;
+              bMonoNu = kFALSE ;
+              dnuFnu = 3 * 2.44 / dAcceptance / dExposure / log(10) / (2*dHalfEnergyBinWidth) * pow(10,dLogE) ; //2.44 is from Feldman Cousin 90% confidence upper limit
+              dnuFnuNEL = 3 * 2.44 / dAcceptanceNEL / dExposure / log(10) / (2*dHalfEnergyBinWidth) * pow(10,dLogE) ;
+              cout<<"NuCommunity Definition: "<<dnuFnu<<" acceptance at center energy: "<<dAcceptance<<endl ;
+              cout<<"NuCommunity Definition NEL: "<<dnuFnuNEL<<" acceptance at center energy: "<<dAcceptanceNEL<<endl ;
+              grSensitivityNuCommunity->SetPoint(n,pow(10,dLogE),dnuFnu);
+              grSensitivityNuCommunity->Draw("lp");
+
               cDiffSensitivity->Modified();
               cDiffSensitivity->Update();
 
-              grAcceptance->SetPoint(n,pow(10,dLogE),dAcceptance);
               cAcceptance->cd();
               grAcceptance->Draw("alp");
+              grAcceptanceMonoEnergy->Draw("lp");
               cAcceptance->Modified();
               cAcceptance->Update();
 
@@ -1747,8 +2259,14 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
           dLogE+=dLogEnergyStep;
        }
 
-  grSensitivity->SetLineWidth(3);
-  grSensitivity->SetLineColor(kBlue+3);
+
+  cDiffSensitivity->cd();
+  TLegend *legend = new TLegend(0.53,0.7,0.75,0.88);
+  TString legstr;
+  legend->AddEntry(grSensitivity,"Integration","l");
+  legend->AddEntry(grSensitivityNuCommunity,"Approximation","l");
+  legend->Draw();
+
   grSensitivity->GetXaxis()->SetTitle("energy [GeV]");
   grSensitivity->GetYaxis()->SetTitle("E^{2} dN/dE [ GeV cm^{-2} s^{-1} sr^{-1} ]");
   grSensitivity->GetYaxis()->SetTitleSize(0.04);
@@ -1756,8 +2274,12 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
   grSensitivity->GetXaxis()->SetTitleSize(0.04);
   grSensitivity->GetXaxis()->SetLabelSize(0.04);
 
-  grAcceptance->SetLineWidth(3);
-  grAcceptance->SetLineColor(kBlue+3);
+  cAcceptance->cd();
+  legend = new TLegend(0.755,0.49,0.84,0.63);
+  legend->AddEntry(grAcceptance,"Averaged","l");
+  legend->AddEntry(grAcceptanceMonoEnergy,"Mono","l");
+  legend->Draw();
+
   grAcceptance->GetXaxis()->SetTitle("energy [GeV]");
   grAcceptance->GetYaxis()->SetTitle("acceptance [ cm^{2} sr ]");
   grAcceptance->GetYaxis()->SetTitleSize(0.04);
@@ -1774,12 +2296,20 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
   hTriggeredAzimuthAngles->Scale(1.0/hTriggeredAzimuthAngles->Integral(),"nosw2");
 
   TString Filename;
-  Filename.Form("SensitivityResults/new4/DifferentialSensitivityTrinity_10TimesNSB_%ikmAboveGround_%0.0fsqrmMirror_%0.1fdegUpperFoV_%0.1fdegLowerFoV_%0.1fdegMinShowerLength.root",iConfig,dMirrorA[iMirrorSize],dFoV,dFoVBelow/pi*180.,dMinLength);
-  cDiffSensitivity->SaveAs(Filename.Data());
-  Filename.Form("SensitivityResults/new4/AcceptanceTrinity_10TimesNSB_%ikmAboveGround_%0.0fsqrmMirror_%0.1fdegUpperFoV_%0.1fdegLowerFoV_%0.1fdegMinShowerLength.root",iConfig,dMirrorA[iMirrorSize],dFoV,dFoVBelow/pi*180.,dMinLength);
-  cAcceptance->SaveAs(Filename.Data());
-  Filename.Form("SensitivityResults/new4/TriggeredAzimuthTrinity_10TimesNSB_%ikmAboveGround_%0.0fsqrmMirror_%0.1fdegUpperFoV_%0.1fdegLowerFoV_%0.1fdegMinShowerLength.root",iConfig,dMirrorA[iMirrorSize],dFoV,dFoVBelow/pi*180.,dMinLength);
-  cTriggeredAzimuthAngles->SaveAs(Filename.Data());
+  Filename.Form("SensitivityResults/StudyHighestEnergies/DifferentialSensitivityTrinity_NuTauSim_%ikmAboveGround_%0.0fsqrmMirror_%0.1fdegUpperFoV_%0.1fdegLowerFoV_%0.1fdegMinShowerLength.root",iConfig,dMirrorA[iMirrorSize],dFoV,dFoVBelow/pi*180.,dMinLength);
+//  cDiffSensitivity->SaveAs(Filename.Data());
+  Filename.Form("SensitivityResults/StudyHighestEnergies/AcceptanceTrinity_NuTauSim_%ikmAboveGround_%0.0fsqrmMirror_%0.1fdegUpperFoV_%0.1fdegLowerFoV_%0.1fdegMinShowerLength.root",iConfig,dMirrorA[iMirrorSize],dFoV,dFoVBelow/pi*180.,dMinLength);
+//  cAcceptance->SaveAs(Filename.Data());
+  Filename.Form("SensitivityResults/StudyHighestEnergies/TriggeredAzimuthTrinity_NuTauSim_%ikmAboveGround_%0.0fsqrmMirror_%0.1fdegUpperFoV_%0.1fdegLowerFoV_%0.1fdegMinShowerLength.root",iConfig,dMirrorA[iMirrorSize],dFoV,dFoVBelow/pi*180.,dMinLength);
+//  cTriggeredAzimuthAngles->SaveAs(Filename.Data());
+
+  Double_t *dE = grSensitivity->GetX(); 
+  Double_t *dF = grSensitivity->GetY(); 
+//  for(int i=0;i<grSensitivity->GetN();i++)
+//     {
+//       cout<<dE[i]<<"  "<<dF[i]<<endl;;
+//     }
+
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -1794,6 +2324,9 @@ int main (int argc, char **argv) {
   TApplication *theApp = new TApplication("App",&argc,argv);
   gROOT->ProcessLine("#include <vector>"); //need this otherwise we cannot save vectors in the root file
 
+  //read tables to use NuTauSimResults	
+  readFromTable() ;
+  findAngleNumber() ;
                           
 //cout<<PDecayFluorescence(1e9,10,3,170)<<endl;;
 
@@ -1811,13 +2344,14 @@ hTriggeredAzimuthAngles->SetLineColor(kBlue+3);
 
 //plot the probability that a tau emerges when a neutrino hits the Earth
 PlotEmergenceProbability();
+cout<<"Done with Emergence Probability Plot"<<endl;
 //Double_t dmin = 1;
 //Double_t dmax = 6001.0; //thickness in km
 //Double_t xStepCoarse = 0.1;
 
 gStyle->SetOptStat(0);
 
-TH1D *hTau = new TH1D("hTau","",70,5,12);
+TH1D *hTau = new TH1D("hTau","",70,4,11);
 hTau->GetXaxis()->SetTitle("energy [GeV]");
 hTau->GetYaxis()->SetTitle("F_tau/F_nu");
 hTau->SetLineWidth(3);
@@ -1827,6 +2361,7 @@ hTau->GetYaxis()->SetTitleOffset(1.3);
 hTau->GetYaxis()->SetTitleSize(0.04);
 hTau->GetXaxis()->SetTitleSize(0.04);
 hTau->GetYaxis()->SetLabelSize(0.045);
+
 
 TAxis *axis = hTau->GetXaxis();
 int bins = axis->GetNbins();
@@ -1853,7 +2388,7 @@ for(int i=0;i<hTau->GetNbinsX();i++)
   while(Etau<=Eh)
   {
    //  cout<<"Energy "<<E<<endl;
-   Double_t P = PEtau(100,Etau,Enu) ;
+   Double_t P = PEtau(100,Etau,Enu,hTau) ;
    hTau->Fill(Etau,weight*P);
    n++;
    Etau=  hTau->GetBinCenter(n+1);
@@ -1887,7 +2422,7 @@ TLegend *legend = new TLegend(0.75,0.6,0.97,0.95);
 TString legstr;
 for(float i=0;i<4;i++)
 {
-GetTauDistribution(hTau,pow(10,i),9.0,9.1);//9.0...9.1
+GetTauDistribution(hTau,pow(10,i),pow(10,9.0),pow(10,9.1001));//9.0...9.1
 TH1D *h = (TH1D*)hTau->Clone("h");
 h->SetLineStyle(i+1);
 h->Draw("same");
@@ -1901,6 +2436,18 @@ legend->Draw();
 //Sensitivity calculation starts here
 bFluorescence = kFALSE;
 
+//start test*****************************************************************************
+
+cout << "start test***" << endl ;
+TGraph *grDiffAcceptance = new TGraph();
+bMonoNu = kFALSE ;
+//Double_t dAcceptance = CalculateAcceptance(5.7,6.7,grDiffAcceptance,hTau);
+CalculateDifferentialSensitivity(hTau);
+//cout << "PEtauAccpetance: " << dAcceptance << endl;
+cout << "end test***" << endl;
+
+//end test********************************************************************************
+
 //CalculateAcceptanceVsImageLength(hTau);
 
 //CalculateAcceptanceVsUpperFoV(hTau);
@@ -1913,8 +2460,8 @@ bFluorescence = kFALSE;
 //
 //CalculateAcceptanceVsEnergy(hTau);
 //
-//CalculateIntegralSensitivity(hTau);
-CalculateDifferentialSensitivity(hTau);
+//CalculateIntegralSensitivity0(hTau);
+//CalculateDifferentialSensitivity(hTau);
 //
 
 /*
@@ -1924,12 +2471,30 @@ cout<<"DEBUGGING"<<endl;
                GetTauDistribution(hTau,dEarth,9.5,10.5);                
                for(int i=0;i<hTau->GetNbinsX();i++)
                   {
-cout<<hTau->GetBinCenter(i+1)  <<" taus cont: "<<hTau->GetBinContent(i+1)<<endl;
-}
+                     cout<<hTau->GetBinCenter(i+1)  <<" taus cont: "<<hTau->GetBinContent(i+1)<<endl;
+                  }
 
-cout<<endl<<endl;
- cout<<PEtau(166.788,1.42191e+08,5e+09 )<<endl<<endl;
- cout<<PEtau(166.788,1.42191e+09,1e10 )<<endl;
+*/
+/*
+yMin = 5;
+yMax = 5.1;
+yDelta = 5;
+MaxElevation = 30;
+DeltaAngle = 0.05;
+dMaxCherenkovAzimuthAngle = 30;
+dMinEnu = 5.5;
+dMaxEnu = 6.5;
+
+    Double_t dFoV = 3;  //test 0, 1, 2, 10
+    tanFoV = tan(dFoV/180.*pi);
+    //dFoVBelow = asin(REarth/(REarth+DetectorAltitude[iConfig]));
+    dFoVBelow =  2/180.*pi; 
+    iMirrorSize = 2;
+    dMinimumNumberPhotoelectrons = dThreshold[iMirrorSize]/dMirrorA[iMirrorSize]; 
+
+    dMinLength = 0.3; //mimnimum length a shower has to have in the camera, in degrees. This is a conservative estimate because it assumes that the shower starts at a distance l from the detector, which is not necessarily tru for showers with shallow elevation angles.
+TGraph *grTMP = new TGraph();
+CalculateAcceptance(dMinEnu,dMaxEnu,grTMP,hTau);
 */
 
 //loop over threshold energy//
