@@ -323,7 +323,9 @@ Double_t PEtauNoEnergyLoss(Double_t D,Double_t Etau, Double_t Enu, TH1D *hTau)
 
 int n = hTau->FindBin(Etau);
 if(hTau->GetBinLowEdge(n)>0.8*Enu  || hTau->GetBinLowEdge(n+1)<0.8*Enu )
-  return 0;
+	return 0;
+
+
 
 Double_t sCC = grsCC->Eval(Enu); //crossection in pB
 Double_t sNC = grsNC->Eval(Enu); //crossection in pB
@@ -344,7 +346,6 @@ if(Prob<0)
   return 0;
 
 Prob /= (hTau->GetBinLowEdge(n+1)-hTau->GetBinLowEdge(n));
-
 return Prob;  
 }
 
@@ -861,8 +862,8 @@ void PlotEmergenceProbability()
   TLegend *leg = new TLegend(0.7,0.4,0.89,0.88,"neutrino energy");
 
 
-  double Enulog = 11;
-  double Enuminlog = 5.9;
+  double Enulog = 6;
+  double Enuminlog = 4.9;
   double Enusteplog = 0.5;
   int s=0;
   while(Enulog>Enuminlog)
@@ -894,9 +895,10 @@ void PlotEmergenceProbability()
                if(hTau->GetBinLowEdge(i+2)<=Enu)
                  {
                     Double_t P = PEtau(targetthickness,Etau,Enu,hTau);
-                    //cout<<i+1<<" "<<targetthickness<<" . "<<Etau<<"  "<<Enu<<" P "<<P<<endl;
-                  P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
+                    double P1 = PEtauNoEnergyLoss(targetthickness,Etau,Enu,hTau) ;
 
+                  P *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
+                  P1 *= (hTau->GetBinLowEdge(i+1)-hTau->GetBinLowEdge(i));
                     hTau->Fill(Etau,P); 
                     hTau->SetBinError(i,0);
                     dSumProb+=P;
@@ -923,8 +925,8 @@ void PlotEmergenceProbability()
   mg->GetYaxis()->SetTitleOffset(1.0);
   mg->GetYaxis()->SetTitleSize(0.045);
   mg->GetYaxis()->SetLabelSize(0.045);
-  mg->GetYaxis()->SetRangeUser(1e-6,1);
- // mg->GetXaxis()->SetRangeUser(1,5e3);
+  mg->GetYaxis()->SetRangeUser(1e-8,1e-4);
+  mg->GetXaxis()->SetRangeUser(1,5e4);
   leg->Draw();
   //TF1 *fdeg=new TF1("fdeg","90-180/3.1415*TMath::ASin(0.5*x/6371)",0,1e4);
   cout<<mg->GetXaxis()->GetXmin()<<endl;
@@ -1084,9 +1086,7 @@ axis->Delete();
     //without the observing time
     //dConversion*=3*365*24*3600*0.20; //exposure time 3 years in seconds with 20% duty cycle
 
-   
     dConversion*=2; //because we only calculate for azimuth angles 0 to azimuth max. There are also negative azimuth values due to symmetry of the problem 
-
 
     Double_t dIntegratedAcceptance=0;
     Int_t p = 0;
@@ -1147,7 +1147,7 @@ axis->Delete();
                           dP = dPFluorescence;
                         else
                           dP = dPCherenkov;
-                        dDeltaAcceptance+=hTau->GetBinContent(i+1)*dP;
+                        dDeltaAcceptance+=hTau->GetBinContent(i+1)*dP ;
                         //dDeltaAcceptance+=hTau->GetBinContent(i+1); //use above
                         if(!bMonoNu)
                           hTriggeredAzimuthAngles->Fill(azimuth,hTau->GetBinContent(i+1)*dP*dWeightForTriggeredAzimuth);
@@ -1394,14 +1394,15 @@ void CalculateAcceptanceVsEnergy(TH1D *hTau)
 
   bCombined = kFALSE;
 
-  MaxElevation = 10; //elevation angle (determines path through Earth; 
+  MaxElevation = 20; //was 10 //elevation angle (determines path through Earth;
   DeltaAngle = 0.05; //steps in azimuth and elevation 
   yMin = 0;
   yDelta = 5; 
 
   iConfig = 2; //telescope altitude
-  dFoVBelow = asin(REarth/(REarth+DetectorAltitude[iConfig]));
-  tanFoV = tan(5./180.*pi);
+//  dFoVBelow = asin(REarth/(REarth+DetectorAltitude[iConfig]));
+  dFoVBelow = 89./180.*pi ;
+  tanFoV = tan(89./180.*pi); //was 5.
   dMinLength = 0.3; //mimnimum length a shower has to have in the camera, in degrees. This is a conservative estimate because it assumes that the shower starts at a distance l from the detector, which is not necessarily tru for showers with shallow elevation angles.
 
   iMirrorSize = 2;
@@ -1409,10 +1410,7 @@ void CalculateAcceptanceVsEnergy(TH1D *hTau)
 
   Double_t dLogEnergyStep = 0.2;
   Double_t dHalfEnergyBinWidth =1/2.; //in log
-  Double_t logEmin = 10.0; //was 7
-
-
-
+  Double_t logEmin = 9; //was 7
 
   TMultiGraph *mgDiffAcceptance = new TMultiGraph();
   TMultiGraph *mgAcceptance = new TMultiGraph();
@@ -1444,7 +1442,7 @@ void CalculateAcceptanceVsEnergy(TH1D *hTau)
        dMaxEnu=logEmin+f*dLogEnergyStep+dHalfEnergyBinWidth;
        Double_t dPreFactor = pow(10,dMaxEnu+dMinEnu) / (pow(10,dMaxEnu)-pow(10,dMinEnu));
        dPreFactor *= 3;//three neutrino flavours
-       
+
 
        TGraph *grDiffAcceptance = new TGraph();
        if(bFluorescence)
@@ -1924,7 +1922,7 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
     Double_t dLogEnergyStep = 0.2; //0.2
     Double_t dHalfEnergyBinWidth =1/2.; //in log was 1/2
     Double_t logEmin = 5; //7
-    Double_t logEmax = 11; //11
+    Double_t logEmax = 5; //11
 
     bCombined = kTRUE;
     yMin = 5; //5
@@ -1934,29 +1932,27 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
     DeltaAngle = 0.05; //steps in azimuth and elevation 
 
     iConfig = 2; //telescope altitude
-  
+
     //exposure
     Double_t dExposure=10*365*24*3600*0.20; //exposure time 10 years in seconds with 20% duty cycle
 
-    Double_t dFoV = 2;  //test 0, 1, 2, 10
-    tanFoV = tan(dFoV/180.*pi);
+    Double_t dFoV = 2 ;  //test 0, 1, 2, 10
+    tanFoV = tan(dFoV/180.*pi) ;
     //dFoVBelow = asin(REarth/(REarth+DetectorAltitude[iConfig]));
-    dFoVBelow =  3/180.*pi; 
+    dFoVBelow =  3/180.*pi ;
     iMirrorSize = 2;
     dMinimumNumberPhotoelectrons = dThreshold[iMirrorSize]/dMirrorA[iMirrorSize]; 
 
     dMinLength = 0.3; //mimnimum length a shower has to have in the camera, in degrees. This is a conservative estimate because it assumes that the shower starts at a distance l from the detector, which is not necessarily tru for showers with shallow elevation angles.
     TGraph *grDiffAcceptance = new TGraph();
 
-    TGraph *grSensitivity = new TGraph();
-    grSensitivity->SetLineWidth(3);
-    grSensitivity->SetLineColor(kBlue+3);
+    TGraph *grSensitivity = new TGraph() ;
+    grSensitivity->SetLineWidth(3) ;
+    grSensitivity->SetLineColor(kBlue+3) ;
 
     TGraph *grSensitivityNuCommunity = new TGraph();
     grSensitivityNuCommunity->SetLineWidth(3);
     grSensitivityNuCommunity->SetLineColor(kRed+3);
-
-
 
     TCanvas *cDiffSensitivity = new TCanvas("cDiffSensitivity","Differential Sensitivity",750,500);
     cDiffSensitivity->Draw();
@@ -1975,12 +1971,9 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
     cAcceptance->Draw();
     cAcceptance->SetLogy();
     cAcceptance->SetLogx();
-  
+
     TCanvas *cTriggeredAzimuthAngles = new TCanvas("cTriggeredAzimuthAngles","Triggered Azimuth Angles",750,500);
     hTriggeredAzimuthAngles->Draw("HIST");
-
-  
-
 
     //Move in steps from lowest to highes energy
     Double_t dLogE = logEmin;
@@ -1988,25 +1981,25 @@ void CalculateDifferentialSensitivity(TH1D *hTau)
     while(dLogE<=logEmax)
        {
           bMonoNu = kFALSE; //calculate the acceptance averaged over Enu bin
-          Double_t dAcceptance = CalculateAcceptance(dLogE-dHalfEnergyBinWidth,dLogE+dHalfEnergyBinWidth,grDiffAcceptance,hTau);
+          Double_t dAcceptance = CalculateAcceptance(dLogE-dHalfEnergyBinWidth,dLogE+dHalfEnergyBinWidth,grDiffAcceptance,hTau) ;
 
           if(dAcceptance>1)
            {
-              grAcceptance->SetPoint(n,pow(10,dLogE),dAcceptance);
+              grAcceptance->SetPoint(n,pow(10,dLogE),dAcceptance) ;
 
               Double_t dnuFnu = 3 * 2.44 * pow(10,dLogE*2) / dAcceptance / dExposure / (pow(10,dLogE+dHalfEnergyBinWidth)- pow(10,dLogE-dHalfEnergyBinWidth));
               cout<<"Energy "<<dLogE-dHalfEnergyBinWidth<<" to "<<dLogE+dHalfEnergyBinWidth<<" acceptance:  "<<dAcceptance<<" nuFnu: "<<dnuFnu<<" for power law with index -"<<nuIndex<<endl;
-              grSensitivity->SetPoint(n,pow(10,dLogE),dnuFnu);
-              cDiffSensitivity->cd();
-              grSensitivity->Draw("alp");
+              grSensitivity->SetPoint(n,pow(10,dLogE),dnuFnu) ;
+              cDiffSensitivity->cd() ;
+              grSensitivity->Draw("alp") ;
 
               //Calculate the Sensitivity as done by the Nu Community
               bMonoNu = kTRUE; //calculate the acceptance at Enu bin center
-              dAcceptance = CalculateAcceptance(dLogE-dHalfEnergyBinWidth,dLogE+dHalfEnergyBinWidth,grDiffAcceptance,hTau);
-              grAcceptanceMonoEnergy->SetPoint(n,pow(10,dLogE),dAcceptance);
-              bMonoNu = kFALSE;
-              dnuFnu = 3 * 2.44 / dAcceptance / dExposure / log(10) / (2*dHalfEnergyBinWidth) * pow(10,dLogE); //2.44 is from Feldman Cousin 90% confidence upper limit
-              cout<<"NuCommunity Definition: "<<dnuFnu<<" acceptance at center energy: "<<dAcceptance<<endl;
+              dAcceptance = CalculateAcceptance(dLogE-dHalfEnergyBinWidth,dLogE+dHalfEnergyBinWidth,grDiffAcceptance,hTau) ;
+              grAcceptanceMonoEnergy->SetPoint(n,pow(10,dLogE),dAcceptance) ;
+              bMonoNu = kFALSE ;
+              dnuFnu = 3 * 2.44 / dAcceptance / dExposure / log(10) / (2*dHalfEnergyBinWidth) * pow(10,dLogE) ; //2.44 is from Feldman Cousin 90% confidence upper limit
+              cout<<"NuCommunity Definition: "<<dnuFnu<<" acceptance at center energy: "<<dAcceptance<<endl ;
               grSensitivityNuCommunity->SetPoint(n,pow(10,dLogE),dnuFnu);
               grSensitivityNuCommunity->Draw("lp");
 
@@ -2131,6 +2124,7 @@ hTau->GetYaxis()->SetTitleSize(0.04);
 hTau->GetXaxis()->SetTitleSize(0.04);
 hTau->GetYaxis()->SetLabelSize(0.045);
 
+
 TAxis *axis = hTau->GetXaxis();
 int bins = axis->GetNbins();
 Axis_t from = axis->GetXmin();
@@ -2204,6 +2198,18 @@ legend->Draw();
 //Sensitivity calculation starts here
 bFluorescence = kFALSE;
 
+//start test*****************************************************************************
+
+cout << "start test***" << endl ;
+TGraph *grDiffAcceptance = new TGraph();
+bMonoNu = kFALSE ;
+//Double_t dAcceptance = CalculateAcceptance(5.7,6.7,grDiffAcceptance,hTau);
+CalculateDifferentialSensitivity(hTau);
+cout << "PEtauAccpetance: " << dAcceptance << endl;
+cout << "end test***" << endl;
+
+//end test********************************************************************************
+
 //CalculateAcceptanceVsImageLength(hTau);
 
 //CalculateAcceptanceVsUpperFoV(hTau);
@@ -2216,7 +2222,7 @@ bFluorescence = kFALSE;
 //
 //CalculateAcceptanceVsEnergy(hTau);
 //
-CalculateIntegralSensitivity0(hTau);
+//CalculateIntegralSensitivity0(hTau);
 //CalculateDifferentialSensitivity(hTau);
 //
 
