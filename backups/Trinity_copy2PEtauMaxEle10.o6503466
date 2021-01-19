@@ -1,0 +1,120 @@
+---------------------------------------
+Begin PBS Prologue Sat Jan 16 02:27:46 EST 2021
+Job ID:     6503466.sched-hive.pace.gatech.edu
+User ID:    clin373
+Job name:   Trinity_copy2PEtauMaxEle10
+Queue:      hive
+End PBS Prologue Sat Jan 16 02:27:46 EST 2021
+---------------------------------------
+Compiling TrinityPerformanceCalculations.cpp ... Done
+g++          -Wl,--no-as-needed -fPIC -ggdb3 -O3 -L/usr/local/pace-apps/manual/packages/root/6.08.06/gcc-8.3.0/lib -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -Wl,-rpath,/usr/local/pace-apps/manual/packages/root/6.08.06/gcc-8.3.0/lib -lm -ldl -rdynamic TrinityPerformanceCalculations.o -o TrinityPerformanceCalculations
+size: 5203
+0.9
+0.00404707  31.3288
+Done with Emergence Probability Plot
+Energy 5 acceptance:  3351.47 nuFnu: 1.21674e-06
+NuCommunity Definition: 2.44748e-06 acceptance at center energy: 2059.39
+Energy 5.2 acceptance:  13539.9 nuFnu: 4.77328e-07
+NuCommunity Definition: 9.36605e-07 acceptance at center energy: 8529.09
+Energy 5.4 acceptance:  52438.4 nuFnu: 1.95336e-07
+NuCommunity Definition: 3.55604e-07 acceptance at center energy: 35603.5
+Energy 5.6 acceptance:  188636 nuFnu: 8.60613e-08
+NuCommunity Definition: 1.41898e-07 acceptance at center energy: 141410
+Energy 5.8 acceptance:  588575 nuFnu: 4.37149e-08
+NuCommunity Definition: 6.0229e-08 acceptance at center energy: 528023
+Energy 6 acceptance:  1.66872e+06 nuFnu: 2.4437e-08
+NuCommunity Definition: 2.72757e-08 acceptance at center energy: 1.84792e+06
+Energy 6.2 acceptance:  4.43248e+06 nuFnu: 1.45809e-08
+NuCommunity Definition: 1.6206e-08 acceptance at center energy: 4.92929e+06
+Energy 6.4 acceptance:  1.11095e+07 nuFnu: 9.22012e-09
+NuCommunity Definition: 1.00508e-08 acceptance at center energy: 1.25968e+07
+Energy 6.6 acceptance:  2.64683e+07 nuFnu: 6.13346e-09
+NuCommunity Definition: 6.45567e-09 acceptance at center energy: 3.10826e+07
+Energy 6.8 acceptance:  5.98819e+07 nuFnu: 4.29671e-09
+NuCommunity Definition: 4.38313e-09 acceptance at center energy: 7.25562e+07
+Energy 7 acceptance:  1.29434e+08 nuFnu: 3.15054e-09
+NuCommunity Definition: 3.06894e-09 acceptance at center energy: 1.64237e+08
+Energy 7.2 acceptance:  2.66461e+08 nuFnu: 2.42548e-09
+NuCommunity Definition: 2.33953e-09 acceptance at center energy: 3.41452e+08
+Energy 7.4 acceptance:  5.21312e+08 nuFnu: 1.96487e-09
+NuCommunity Definition: 1.84547e-09 acceptance at center energy: 6.86044e+08
+Energy 7.6 acceptance:  9.72382e+08 nuFnu: 1.66953e-09
+NuCommunity Definition: 1.55044e-09 acceptance at center energy: 1.29421e+09
+Energy 7.8 acceptance:  1.7486e+09 nuFnu: 1.47143e-09
+NuCommunity Definition: 1.39205e-09 acceptance at center energy: 2.28456e+09
+Energy 8 acceptance:  3.04396e+09 nuFnu: 1.33966e-09
+NuCommunity Definition: 1.31214e-09 acceptance at center energy: 3.84129e+09
+Energy 8.2 acceptance:  5.16502e+09 nuFnu: 1.2513e-09
+NuCommunity Definition: 1.24471e-09 acceptance at center energy: 6.41788e+09
+Energy 8.4 acceptance:  8.66506e+09 nuFnu: 1.18212e-09
+NuCommunity Definition: 1.21989e-09 acceptance at center energy: 1.03786e+10
+Energy 8.6 acceptance:  1.44748e+10 nuFnu: 1.12155e-09
+NuCommunity Definition: 1.22775e-09 acceptance at center energy: 1.63437e+10
+Energy 8.8 acceptance:  2.28744e+10 nuFnu: 1.12482e-09
+NuCommunity Definition: 1.22769e-09 acceptance at center energy: 2.59041e+10
+Energy 9 acceptance:  3.46579e+10 nuFnu: 1.1766e-09
+NuCommunity Definition: 1.20832e-09 acceptance at center energy: 4.17133e+10
+Energy 9.2 acceptance:  5.13043e+10 nuFnu: 1.25973e-09
+NuCommunity Definition: 1.32636e-09 acceptance at center energy: 6.02278e+10
+Energy 9.4 acceptance:  7.43384e+10 nuFnu: 1.3779e-09
+NuCommunity Definition: 1.55058e-09 acceptance at center energy: 8.16516e+10
+Energy 9.6 acceptance:  1.05437e+11 nuFnu: 1.53971e-09
+NuCommunity Definition: 1.79187e-09 acceptance at center energy: 1.11983e+11
+Energy 9.8 acceptance:  1.47732e+11 nuFnu: 1.74164e-09
+NuCommunity Definition: 2.03604e-09 acceptance at center energy: 1.56197e+11
+Energy 10 acceptance:  2.03154e+11 nuFnu: 2.00728e-09
+NuCommunity Definition: 2.30296e-09 acceptance at center energy: 2.18863e+11
+Energy 10.2 acceptance:  2.69435e+11 nuFnu: 2.39871e-09
+NuCommunity Definition: 2.70176e-09 acceptance at center energy: 2.95673e+11
+Energy 10.4 acceptance:  3.38693e+11 nuFnu: 3.0243e-09
+NuCommunity Definition: 3.45784e-09 acceptance at center energy: 3.66145e+11
+Energy 10.6 acceptance:  3.82602e+11 nuFnu: 4.24311e-09
+NuCommunity Definition: 4.96112e-09 acceptance at center energy: 4.04463e+11
+Energy 10.8 acceptance:  3.81399e+11 nuFnu: 6.74609e-09
+NuCommunity Definition: 8.04092e-09 acceptance at center energy: 3.95506e+11
+Energy 11 acceptance:  3.33791e+11 nuFnu: 1.22168e-08
+NuCommunity Definition: 9616.45 acceptance at center energy: 0.524136
+100000  1.21674e-06
+158489  4.77328e-07
+251189  1.95336e-07
+398107  8.60613e-08
+630957  4.37149e-08
+1e+06  2.4437e-08
+1.58489e+06  1.45809e-08
+2.51189e+06  9.22012e-09
+3.98107e+06  6.13346e-09
+6.30957e+06  4.29671e-09
+1e+07  3.15054e-09
+1.58489e+07  2.42548e-09
+2.51189e+07  1.96487e-09
+3.98107e+07  1.66953e-09
+6.30957e+07  1.47143e-09
+1e+08  1.33966e-09
+1.58489e+08  1.2513e-09
+2.51189e+08  1.18212e-09
+3.98107e+08  1.12155e-09
+6.30957e+08  1.12482e-09
+1e+09  1.1766e-09
+1.58489e+09  1.25973e-09
+2.51189e+09  1.3779e-09
+3.98107e+09  1.53971e-09
+6.30957e+09  1.74164e-09
+1e+10  2.00728e-09
+1.58489e+10  2.39871e-09
+2.51189e+10  3.0243e-09
+3.98107e+10  4.24311e-09
+6.30957e+10  6.74609e-09
+1e+11  1.22168e-08
+done
+---------------------------------------
+Begin PBS Epilogue Sun Jan 17 14:28:30 EST 2021
+Job ID:     6503466.sched-hive.pace.gatech.edu
+User ID:    clin373
+Job name:   Trinity_copy2PEtauMaxEle10
+Resources:  nodes=1:ppn=4,mem=8gb,walltime=36:00:00,neednodes=1:ppn=4
+Rsrc Used:  cput=35:55:26,vmem=549128kb,walltime=36:00:44,mem=49652kb,energy_used=0
+Queue:      hive
+Nodes:     
+atl1-1-01-017-36-l.pace.gatech.edu
+End PBS Epilogue Sun Jan 17 14:28:30 EST 2021
+---------------------------------------
